@@ -27,6 +27,12 @@ def _nice_step(span, target_n=8):
 class VisPyPlotWidget(QWidget):
     """VisPy canvas embedded in a PySide6 widget for live signal display."""
 
+    MODE_STYLES = {
+        "raw": (0.10, 0.35, 0.80, 1.0),
+        "filtered": (0.00, 0.55, 0.32, 1.0),
+        "rms": (0.55, 0.25, 0.75, 1.0),
+    }
+
     def __init__(self):
         super().__init__()
 
@@ -54,7 +60,7 @@ class VisPyPlotWidget(QWidget):
         self.x_axis.height_max = 40
 
         # col=0: rotated Y title, col=1: y_axis, col=2: plot view / x_axis
-        y_label = scene.Label("Amplitude (µV)", color="black", rotation=-90)
+        y_label = scene.Label("Amplitude (mV)", color="black", rotation=-90)
         y_label.width_max = 20
         grid.add_widget(y_label, row=0, col=0)
 
@@ -77,9 +83,10 @@ class VisPyPlotWidget(QWidget):
         self._grid_color = (0.65, 0.65, 0.65, 1.0)
 
         # The signal line — drawn after grid lines so it renders on top
+        self._line_color = self.MODE_STYLES["raw"]
         self.line = scene.Line(
             pos=np.array([[0.0, 0.0], [1.0, 0.0]], dtype=float),
-            color=(0.1, 0.4, 0.8, 1.0),
+            color=self._line_color,
             parent=self.view.scene,
             width=1.5,
         )
@@ -93,6 +100,12 @@ class VisPyPlotWidget(QWidget):
         # When True (default): axes auto-fit to the data on every update.
         # Set to False via the Lock View button to allow free zoom/pan.
         self.autofit = True
+
+    def set_mode(self, mode):
+        """Change the line color to make the active processing mode visible."""
+        self._line_color = self.MODE_STYLES.get(mode, self.MODE_STYLES["raw"])
+        self.line.set_data(color=self._line_color)
+        self.canvas.native.update()
 
     def _get_or_create_grid_line(self, idx):
         while len(self._grid_visuals) <= idx:
@@ -152,7 +165,7 @@ class VisPyPlotWidget(QWidget):
         y = np.asarray(y, dtype=float)
 
         pos = np.column_stack((x, y))
-        self.line.set_data(pos=pos)
+        self.line.set_data(pos=pos, color=self._line_color)
 
         # Auto-scale axes to fit the current data (only if not locked by user)
         if self.autofit:
@@ -184,6 +197,12 @@ class AllChannelsPlotWidget(QWidget):
 
     N_CHANNELS = 32
 
+    MODE_ALPHA = {
+        "raw": 0.85,
+        "filtered": 0.95,
+        "rms": 0.75,
+    }
+
     def __init__(self):
         super().__init__()
 
@@ -209,7 +228,7 @@ class AllChannelsPlotWidget(QWidget):
         self.x_axis.height_max = 40
 
         # col=0: rotated Y title, col=1: y_axis, col=2: plot view / x_axis
-        y_label = scene.Label("Amplitude (µV)", color="black", rotation=-90)
+        y_label = scene.Label("Amplitude (mV)", color="black", rotation=-90)
         y_label.width_max = 20
         grid.add_widget(y_label, row=0, col=0)
 
@@ -233,19 +252,30 @@ class AllChannelsPlotWidget(QWidget):
         # Create one line per channel — colored by cycling through hues
         flat = np.array([[0.0, 0.0], [1.0, 0.0]], dtype=float)
         self._lines = []
+        self._line_colors = []
+        self._mode_alpha = self.MODE_ALPHA["raw"]
         for i in range(self.N_CHANNELS):
             r, g, b = colorsys.hsv_to_rgb(i / self.N_CHANNELS, 0.8, 0.7)
+            color = (r, g, b, self._mode_alpha)
             line = scene.Line(
                 pos=flat,
-                color=(r, g, b, 0.85),
+                color=color,
                 parent=self.view.scene,
                 width=1.0,
             )
             self._lines.append(line)
+            self._line_colors.append((r, g, b))
 
         layout.addWidget(self.canvas.native)
 
         self.autofit = True
+
+    def set_mode(self, mode):
+        """Adjust line opacity to show that the all-channel mode changed."""
+        self._mode_alpha = self.MODE_ALPHA.get(mode, self.MODE_ALPHA["raw"])
+        for line, (r, g, b) in zip(self._lines, self._line_colors):
+            line.set_data(color=(r, g, b, self._mode_alpha))
+        self.canvas.native.update()
 
     def _get_or_create_grid_line(self, idx):
         while len(self._grid_visuals) <= idx:

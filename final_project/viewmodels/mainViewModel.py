@@ -1,6 +1,9 @@
 from PySide6.QtCore import QObject, QTimer, Signal
 
-from models.signal_model import SignalModel
+try:
+    from ..models.signal_model import SignalModel
+except ImportError:
+    from models.signal_model import SignalModel
 
 
 class MainViewModel(QObject):
@@ -9,6 +12,7 @@ class MainViewModel(QObject):
     all_channels_updated = Signal(object, object)  # x array, data_2d (all 32 channels)
     status_updated = Signal(str)                   # status message for the GUI label
     connection_changed = Signal(bool)              # True = connected, False = disconnected
+    stream_stats_updated = Signal(str)             # live TCP/buffer stats for the GUI
 
     def __init__(self):
         super().__init__()
@@ -36,8 +40,13 @@ class MainViewModel(QObject):
         try:
             self.model.connect(port)
             self.timer.start()
-            self.status_updated.emit(f"Connected on port {port}")
+            self.status_updated.emit(f"Connected on port {port} - receiving EMG packets")
             self.connection_changed.emit(True)
+            self._emit_stream_stats()
+        except ConnectionRefusedError:
+            self.status_updated.emit(
+                f"Could not connect on port {port}: start the TCP server first"
+            )
         except OSError as error:
             self.status_updated.emit(f"Could not connect: {error}")
 
@@ -47,6 +56,7 @@ class MainViewModel(QObject):
         self.timer.stop()
         self.status_updated.emit("Disconnected — buffer available for offline inspection")
         self.connection_changed.emit(False)
+        self._emit_stream_stats()
 
     def set_channel(self, channel_index):
         """Called when user changes the channel dropdown (0-based)."""
@@ -145,9 +155,11 @@ class MainViewModel(QObject):
             self.timer.stop()
             self.status_updated.emit("Server disconnected — buffer available for offline inspection")
             self.connection_changed.emit(False)
+            self._emit_stream_stats()
             return
 
         if not self.model.has_data():
+            self._emit_stream_stats()
             return
 
         x = self.model.get_time_axis()
@@ -160,3 +172,19 @@ class MainViewModel(QObject):
             # Emit only the selected channel for the single-channel plot widget
             y = self.model.get_data(self.selected_channel, self.selected_mode)
             self.plot_updated.emit(x, y)
+
+        self._emit_stream_stats()
+
+    def _emit_stream_stats(self):
+        """Emit a compact summary of the current TCP stream and rolling buffer."""
+        samples = self.model.total_samples_received
+        elapsed = self.model.get_signal_time_seconds()
+        buffer_samples = self.model.data_buffer.shape[1]
+        buffer_seconds = buffer_samples / self.model.SAMPLING_RATE
+        packets = samples // self.model.SAMPLES_PER_PACKET
+        self.stream_stats_updated.emit(
+            f"Signal time: {elapsed:5.2f} s   |   "
+            f"Packets: {packets:4d}   |   "
+            f"Samples: {samples:5d}   |   "
+            f"Buffer: {buffer_seconds:4.1f} / {self.model.WINDOW_SECONDS} s"
+        )

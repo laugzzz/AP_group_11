@@ -26,7 +26,7 @@ class SignalModel:
     # ─────────────────────────────────────────────
     # Constants matching the TCP server configuration
     # ─────────────────────────────────────────────
-    HOST = "localhost"          # server runs on the same machine
+    HOST = "127.0.0.1"          # server runs on the same machine
     PORT = 12345                # must match EMGTCPServer port
     SAMPLING_RATE = 2000        # Hz — samples per second per channel
     CHANNELS = 32               # number of electrodes

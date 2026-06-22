@@ -7,11 +7,11 @@ from pathlib import Path
 
 
 class EMGTCPServer:
-    def __init__(self, host='localhost', port=12345,
-                 pkl_file=r'C:\Users\Ekhlass Erouiah\Documents\AP Project\AP_group_11\recording.pkl'):
+    def __init__(self, host='127.0.0.1', port=12345,
+                 pkl_file=None):
         self.host = host
         self.port = port
-        self.pkl_file = pkl_file
+        self.pkl_file = pkl_file or Path(__file__).resolve().parents[1] / "recording.pkl"
         self.server_socket = None
         self.clients = []
         self.running = False
@@ -111,14 +111,17 @@ class EMGTCPServer:
         print("Server stopped")
 
 
-if __name__ == "__main__":
-    # Create and start the server
+def run_server():
+    """Create and run the TCP server until the user stops it."""
     server = EMGTCPServer()
     try:
         server.start()
-        # Keep the main thread alive
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nShutting down server...")
         server.stop()
+
+
+if __name__ == "__main__":
+    run_server()

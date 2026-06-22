@@ -1,19 +1,14 @@
-# -----------------------------------------------------------------------------
-# Project dependencies � EMG TCP Signal Visualization Application
+# EMG TCP Signal Visualization Application
 #
-# Install with:
-#   pip install -r requirements.txt
-#
-# Note: a full pinned version file with security hashes (SHA-256 checksums)
-# can be generated with:
-#   uv export --format requirements-txt --no-dev -o requirements.txt
-# Hashes verify that each downloaded package has not been tampered with.
-# For normal use, this simple version below is sufficient.
-# -----------------------------------------------------------------------------
+# Recommended setup:
+#   python -m venv .venv
+#   source .venv/bin/activate      # macOS/Linux
+#   .venv\Scripts\activate         # Windows PowerShell/CMD
+#   python -m pip install --upgrade pip
+#   python -m pip install -r requirements.txt
 
-numpy>=2.4.6        # numerical arrays, buffer management (allow newer wheel for Python 3.14)
-#numpy==2.2.6       # numerical arrays, buffer management (pinned for Python 3.13)
-scipy==1.17.1       # bandpass filter (butter + filtfilt) and signal processing
-PySide6==6.11.0     # Qt GUI framework (windows, buttons, layouts, signals)
-vispy>=0.16.2       # GPU-accelerated real-time signal plotting (allow newer wheel)
-matplotlib==3.10.8  # offline signal inspection plots
+numpy>=1.26
+scipy>=1.11
+PySide6>=6.6
+vispy>=0.14
+matplotlib>=3.8

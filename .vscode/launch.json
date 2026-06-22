@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run EMG Signal Viewer",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/final_project/main.py",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
