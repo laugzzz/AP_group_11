@@ -87,7 +87,7 @@ def main():
 
     view_model = MainViewModel()
     view = MainView(view_model)
-    view.show()
+    view.showMaximized()
 
     try:
         exit_code = app.exec()

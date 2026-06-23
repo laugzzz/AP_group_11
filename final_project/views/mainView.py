@@ -13,8 +13,10 @@ from PySide6.QtWidgets import (
 )
 
 try:
+    from .offlinePlotView import OfflinePlotView
     from .plotView import AllChannelsPlotWidget, VisPyPlotWidget
 except ImportError:
+    from views.offlinePlotView import OfflinePlotView
     from views.plotView import AllChannelsPlotWidget, VisPyPlotWidget
 
 
@@ -34,6 +36,7 @@ class MainView(QMainWindow):
         super().__init__()
 
         self.view_model = view_model
+        self.offline_plot_view = OfflinePlotView(view_model)
 
         self.setWindowTitle("EMG Signal Viewer")
         self.resize(1200, 700)
@@ -111,6 +114,16 @@ class MainView(QMainWindow):
                                    border-radius: 4px;
                                    padding: 4px 8px;
                                    background-color: white; }
+            QComboBox QAbstractItemView {
+                font-size: 13px;
+                min-width: 130px;
+                selection-background-color: #2a7fd4;
+                selection-color: white;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 24px;
+                padding: 3px 8px;
+            }
         """)
 
         # ── Central widget and main layout ────────────────────────────────
@@ -123,10 +136,12 @@ class MainView(QMainWindow):
         # ── Header: app title + connection controls + status ──────────────
         top_bar = QFrame()
         top_bar.setObjectName("TopBar")
-        top_layout = QHBoxLayout(top_bar)
-        top_layout.setSpacing(12)
+        top_layout = QVBoxLayout(top_bar)
+        top_layout.setSpacing(8)
         top_layout.setContentsMargins(14, 10, 14, 10)
 
+        header_row = QHBoxLayout()
+        header_row.setSpacing(12)
         title_layout = QVBoxLayout()
         title_layout.setSpacing(1)
         title = QLabel("EMG Signal Viewer")
@@ -135,7 +150,8 @@ class MainView(QMainWindow):
         subtitle.setObjectName("AppSubtitle")
         title_layout.addWidget(title)
         title_layout.addWidget(subtitle)
-        top_layout.addLayout(title_layout)
+        header_row.addLayout(title_layout)
+        header_row.addStretch()
 
         meta_layout = QHBoxLayout()
         meta_layout.setSpacing(6)
@@ -143,8 +159,8 @@ class MainView(QMainWindow):
             meta_label = QLabel(text)
             meta_label.setObjectName("MetaLabel")
             meta_layout.addWidget(meta_label)
-        top_layout.addLayout(meta_layout)
-        top_layout.addStretch()
+        header_row.addLayout(meta_layout)
+        top_layout.addLayout(header_row)
 
         conn_layout = QHBoxLayout()
         conn_layout.setSpacing(8)
@@ -164,12 +180,13 @@ class MainView(QMainWindow):
         self.disconnect_button.setEnabled(False)
         conn_layout.addWidget(self.connect_button)
         conn_layout.addWidget(self.disconnect_button)
-        top_layout.addLayout(conn_layout)
+        conn_layout.addStretch()
 
         self.status_label = QLabel("Ready - press Connect to start streaming")
         self.status_label.setObjectName("StatusLabel")
-        self.status_label.setMinimumWidth(250)
-        top_layout.addWidget(self.status_label)
+        self.status_label.setMinimumWidth(320)
+        conn_layout.addWidget(self.status_label)
+        top_layout.addLayout(conn_layout)
 
         main_layout.addWidget(top_bar)
 
@@ -292,7 +309,7 @@ class MainView(QMainWindow):
         self.filtered_button.clicked.connect(lambda: self._on_mode_selected("filtered"))
         self.rms_button.clicked.connect(lambda: self._on_mode_selected("rms"))
         self.all_channels_button.toggled.connect(self._on_all_channels_toggled)
-        self.offline_button.clicked.connect(self.view_model.open_offline_plot)
+        self.offline_button.clicked.connect(self.offline_plot_view.show)
         self.lock_view_button.toggled.connect(self._on_lock_view_toggled)
         self.grid_button.toggled.connect(self._on_grid_toggled)
 

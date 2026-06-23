@@ -92,36 +92,20 @@ class MainViewModel(QObject):
             y = self.model.get_data(self.selected_channel, self.selected_mode)
             self.plot_updated.emit(x, y)
 
-    def open_offline_plot(self):
-        """
-        Open a Matplotlib window for offline inspection of the buffered data.
+    @property
+    def channel_count(self):
+        """Number of channels available in the signal model."""
+        return self.model.CHANNELS
 
-        Uses the current selected_channel and selected_mode.
-        The buffer is preserved after disconnect, so this works without a live connection.
-        """
-        if not self.model.has_data():
-            self.status_updated.emit("No data available for offline inspection")
-            return
-        #If the buffer is empty (e.g. you never connected), it shows a status message and exits early instead of crashing.
+    def has_offline_data(self):
+        """Return True when the buffered data can be inspected offline."""
+        return self.model.has_data()
 
-
-        import matplotlib.pyplot as plt
-        # fetch the current channel/mode data from the model
+    def get_offline_data(self, channel, mode):
+        """Return time and signal arrays for offline plotting."""
         x = self.model.get_time_axis()
-        y = self.model.get_data(self.selected_channel, self.selected_mode)
-        
-        # Create a Matplotlib figure to visualize the signal. The x-axis is time in seconds, and the y-axis is amplitude.
-        fig, ax = plt.subplots(figsize=(12, 4))
-        ax.plot(x, y)
-        ax.set_title(
-            f"Channel {self.selected_channel + 1} — {self.selected_mode.upper()} "
-            f"({len(y)} samples, {x[-1] - x[0]:.1f}s)"
-        )
-        ax.set_xlabel("Time (s)")
-        ax.set_ylabel("Amplitude")
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show(block=False) #show it without freezing the app
+        y = self.model.get_data(channel, mode)
+        return x, y
 
     def _on_timer_tick(self):
         """
