@@ -32,15 +32,15 @@ class MainView(QMainWindow):
     - Signal mode buttons (Raw / Filtered / RMS)
     """
 
-    def __init__(self, view_model):
-        super().__init__()
+    def __init__(self, view_model): #receieves viewmodel when main window is created
+        super().__init__()          #initializes parent QMainWIndow
 
-        self.view_model = view_model
+        self.view_model = view_model    #
         self.offline_plot_view = OfflinePlotView(view_model)
 
         self.setWindowTitle("EMG Signal Viewer")
-        self.resize(1200, 700)
-        self.setMinimumSize(900, 560)
+        self.resize(1200, 700)                      #default size
+        self.setMinimumSize(900, 560)               #minimal allowed size
 
         # ── Global stylesheet ─────────────────────────────────────────────
         self.setStyleSheet("""
@@ -113,8 +113,12 @@ class MainView(QMainWindow):
             QLineEdit, QComboBox { border: 1px solid #c8ccd0;
                                    border-radius: 4px;
                                    padding: 4px 8px;
-                                   background-color: white; }
+                                   background-color: white;
+                                   color: #111827; }
             QComboBox QAbstractItemView {
+                background-color: white;
+                color: #111827;
+                border: 1px solid #c8ccd0;
                 font-size: 13px;
                 min-width: 130px;
                 selection-background-color: #2a7fd4;
@@ -124,36 +128,56 @@ class MainView(QMainWindow):
                 min-height: 24px;
                 padding: 3px 8px;
             }
+            QComboBox QAbstractItemView QScrollBar:vertical {
+                background-color: #f1f5f9;
+                width: 14px;
+                margin: 0;
+                border-left: 1px solid #c8ccd0;
+            }
+            QComboBox QAbstractItemView QScrollBar::handle:vertical {
+                background-color: #111827;
+                min-height: 36px;
+            }
+            QComboBox QAbstractItemView QScrollBar::add-line:vertical,
+            QComboBox QAbstractItemView QScrollBar::sub-line:vertical {
+                background-color: white;
+                height: 18px;
+                border: none;
+            }
+            QComboBox QAbstractItemView QScrollBar::add-page:vertical,
+            QComboBox QAbstractItemView QScrollBar::sub-page:vertical {
+                background-color: white;
+            }
         """)
 
         # ── Central widget and main layout ────────────────────────────────
-        central = QWidget()
+        central = QWidget()                     
         self.setCentralWidget(central)
-        main_layout = QVBoxLayout(central)
-        main_layout.setSpacing(10)
-        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout = QVBoxLayout(central)  #create a vertical layout and attach it to central
+        main_layout.setSpacing(10)          #controls space between sections
+        main_layout.setContentsMargins(12, 12, 12, 12)  #margins around the window
 
         # ── Header: app title + connection controls + status ──────────────
-        top_bar = QFrame()
-        top_bar.setObjectName("TopBar")
-        top_layout = QVBoxLayout(top_bar)
-        top_layout.setSpacing(8)
-        top_layout.setContentsMargins(14, 10, 14, 10)
+        top_bar = QFrame()                  #creates the top white section
+        top_bar.setObjectName("TopBar")     #stylesheet target is by "TopBar"
+        top_layout = QVBoxLayout(top_bar)   #vertical layout inside top_bar
+        top_layout.setSpacing(8)            # pixel space between widgets inide layout
+        top_layout.setContentsMargins(14, 10, 14, 10)   #(margins in order LTRB)
 
-        header_row = QHBoxLayout()
+        header_row = QHBoxLayout()      #Horizontal layout top page
         header_row.setSpacing(12)
         title_layout = QVBoxLayout()
         title_layout.setSpacing(1)
-        title = QLabel("EMG Signal Viewer")
+        title = QLabel("EMG Signal Viewer") 
         title.setObjectName("AppTitle")
         subtitle = QLabel("Live TCP stream, signal modes, and offline inspection")
         subtitle.setObjectName("AppSubtitle")
         title_layout.addWidget(title)
         title_layout.addWidget(subtitle)
         header_row.addLayout(title_layout)
-        header_row.addStretch()
+        header_row.addStretch()             #adds felxible empty space
 
-        meta_layout = QHBoxLayout()
+        meta_layout = QHBoxLayout()         
         meta_layout.setSpacing(6)
         for text in ("32 channels", "18 samples/packet", "4608 bytes", "10 s window"):
             meta_label = QLabel(text)
@@ -239,6 +263,7 @@ class MainView(QMainWindow):
         view_layout.addWidget(view_label)
         view_layout.addWidget(QLabel("Channel:"))
         self.channel_combo = QComboBox()
+        self.channel_combo.setFixedWidth(130)
         for i in range(32):
             self.channel_combo.addItem(f"Channel {i + 1}")
         self.channel_combo.setToolTip("Select one EMG channel for the single-channel plot.")

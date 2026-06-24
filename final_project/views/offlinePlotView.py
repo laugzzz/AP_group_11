@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QButtonGroup, QComboBox, QLabel, QPushButton, QToolBar
+from PySide6.QtWidgets import QButtonGroup, QComboBox, QFrame, QLabel, QPushButton, QToolBar
 
 
 class OfflinePlotView:
@@ -57,6 +57,7 @@ class OfflinePlotView:
         for channel_number in range(1, self.view_model.channel_count + 1):
             channel_combo.addItem(f"Channel {channel_number}")
         channel_combo.setCurrentIndex(self.view_model.selected_channel)
+        channel_combo.setFixedHeight(34)
 
         raw_button = QPushButton("Raw")
         filtered_button = QPushButton("Filtered")
@@ -71,6 +72,7 @@ class OfflinePlotView:
         mode_group.setExclusive(True)
         for button in mode_buttons.values():
             button.setCheckable(True)
+            button.setFixedHeight(34)
             mode_group.addButton(button)
         initial_mode_label = self.MODE_LABELS.get(self.view_model.selected_mode, "Raw")
         mode_buttons[initial_mode_label].setChecked(True)
@@ -111,7 +113,7 @@ class OfflinePlotView:
                 color: #475569;
                 font-size: 12px;
                 font-weight: bold;
-                padding-left: 2px;
+                padding: 0 2px;
             }
             QToolBar QComboBox {
                 min-width: 145px;
@@ -144,10 +146,23 @@ class OfflinePlotView:
                 border-color: #125487;
             }
         """)
-        controls_toolbar.addWidget(QLabel("Channel:"))
+
+        channel_label = QLabel("Channel:")
+        channel_label.setFixedHeight(34)
+        channel_label.setAlignment(Qt.AlignVCenter)
+
+        divider = QFrame()
+        divider.setFixedSize(2, 34)
+        divider.setStyleSheet("background-color: #1f2937; border: none;")
+
+        mode_label = QLabel("Mode:")
+        mode_label.setFixedHeight(34)
+        mode_label.setAlignment(Qt.AlignVCenter)
+
+        controls_toolbar.addWidget(channel_label)
         controls_toolbar.addWidget(channel_combo)
-        controls_toolbar.addSeparator()
-        controls_toolbar.addWidget(QLabel("Mode:"))
+        controls_toolbar.addWidget(divider)
+        controls_toolbar.addWidget(mode_label)
         controls_toolbar.addWidget(raw_button)
         controls_toolbar.addWidget(filtered_button)
         controls_toolbar.addWidget(rms_button)
