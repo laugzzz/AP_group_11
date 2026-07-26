@@ -14,9 +14,9 @@ Group 11
 
 Team members and responsibilities:
 
-- Laura Uruci - frontend/UI, app launch flow
-- TODO - TCP/backend, buffering
-- TODO - signal processing, documentation/testing
+- Ekhlass - backend and all remaining project implementation
+- Laura Uruci - frontend and user interface
+- Radhika - project documentation
 
 ## Setup
 
@@ -38,8 +38,8 @@ On Windows, activate the environment with:
 
 ## Run in VS Code
 
-Open the project folder in VS Code, open `final_project/main.py`, and press
-Run. The app starts a local TCP server automatically in the background.
+Open the project folder in VS Code, start `TCP_Server/main.py`, then open
+`final_project/main.py` and press Run.
 
 In the GUI, keep the port set to `12345` and press **Connect**.
 
@@ -57,7 +57,7 @@ project folder.
 Terminal 1 - start the TCP server:
 
 ```bash
-python start_server.py
+python TCP_Server/main.py
 ```
 
 Leave this terminal open. It should print:
@@ -69,7 +69,7 @@ Server started on 127.0.0.1:12345
 Terminal 2 - start the GUI:
 
 ```bash
-python start_gui.py
+python final_project/main.py
 ```
 
 In the GUI, keep the port set to `12345` and press **Connect**.
@@ -87,7 +87,7 @@ In the GUI, keep the port set to `12345` and press **Connect**.
 
 ## Signal Processing
 
-- Raw mode shows the received EMG signal after conversion to millivolts.
+- Raw mode shows the original ADC values received from the TCP server.
 - Filtered mode applies a 4th-order Butterworth bandpass filter from 20 Hz to
   450 Hz.
 - RMS mode first filters the signal, then computes the RMS envelope using a
@@ -124,5 +124,5 @@ reshapes them to `(32, 18)`, and appends them to the rolling data buffer.
 
 - `127.0.0.1` means the server and GUI run on the same computer.
 - `recording.pkl` must stay in the project root next to this README.
-- If the GUI says the connection was refused, start `python start_server.py`
+- If the GUI says the connection was refused, start `python TCP_Server/main.py`
   first or check that no other program is using port `12345`.

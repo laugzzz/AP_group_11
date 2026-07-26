@@ -33,10 +33,6 @@ class SignalModel:
     SAMPLES_PER_PACKET = 18     # time snapshots bundled per TCP packet
     WINDOW_SECONDS = 10         # how many seconds of history to keep
     DTYPE = np.float64          # must match server's .tobytes() dtype
-    # Raw 16-bit ADC counts (−32768…32767) from recording.pkl → millivolts.
-    # Value taken from recording.pkl: device_information['conversion_factor_biosignal']
-    CONVERSION_FACTOR = 0.0002861  # mV per ADC count
-
 
     def __init__(self):
         # ── Socket state ──────────────────────────────────────────────────
@@ -184,9 +180,6 @@ class SignalModel:
             # Decode bytes → flat array of 576 float64 values → reshape to (32, 18)
             packet = np.frombuffer(packet_bytes, dtype=self.DTYPE)
             packet = packet.reshape(self.CHANNELS, self.SAMPLES_PER_PACKET)
-            # Convert raw ADC counts to millivolts
-            packet = packet * self.CONVERSION_FACTOR
-
             packets.append(packet)
 
         if not packets:
@@ -236,7 +229,7 @@ class SignalModel:
             The signal for the requested channel and mode.
             N = number of samples currently in the buffer (up to 20000).
         """
-        # data_buffer already holds values in mV (conversion applied at decode time)
+        # data_buffer holds the raw ADC values received from the TCP server.
         raw = self.data_buffer[channel, :]
 
         if mode == "raw":

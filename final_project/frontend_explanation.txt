@@ -1,0 +1,427 @@
+Frontend explanation for the EMG Signal Viewer app
+
+I built the frontend so the GUI is separated from the signal processing and TCP logic.
+This document explains each file, the key methods, and how the PySide6 frontend interacts with the ViewModel.
+It is written for teammates who do not have prior frontend experience.
+
+**<span style="color:#1f618d">1. OVERALL ARCHITECTURE</span>**
+=======================
+The frontend follows an MVVM-style structure. This means:
+- View files only build the interface and show data.
+- The ViewModel keeps the current state and acts as a bridge.
+- The Model does the actual TCP and signal processing work.
+
+The files are:
+- `final_project/views/mainView.py`: the main window and all controls.
+- `final_project/views/plotView.py`: live plot widgets, one for a single channel and one for all channels.
+- `final_project/views/offlinePlotView.py`: the separate offline review window.
+- `final_project/viewmodels/mainViewModel.py`: state, timer, and communication between View and Model.
+- `final_project/models/signal_model.py`: the backend signal and TCP logic.
+
+Why this separation helps:
+- The GUI code does not need to know how the TCP socket works.
+- The plotting code does not need to know how modes are selected.
+- The ViewModel connects only the pieces that need to talk to each other.
+
+**<span style="color:#1f618d">2. MAINVIEW.PY</span>**
+----------------
+This file creates the application window and user controls.
+It uses PySide6 widgets and layouts.
+
+Why it is important:
+- This is the screen the user interacts with.
+- It builds buttons, labels, drop-downs, and plot containers.
+- It connects those widgets to the ViewModel.
+
+How PySide6 works here:
+- `QMainWindow` is the application window.
+- `QWidget` is a basic container for other widgets.
+- `QVBoxLayout` and `QHBoxLayout` arrange widgets vertically and horizontally.
+- Widgets like `QPushButton`, `QLineEdit`, and `QComboBox` are the interactive controls.
+- The `clicked` and `toggled` events are connected to methods with `.connect(...)`.
+
+Constructor: `__init__(self, view_model)`
+- `self.view_model = view_model` stores the ViewModel instance.
+- `self.offline_plot_view = OfflinePlotView(view_model)` creates the offline window helper.
+- `self.setWindowTitle("EMG Signal Viewer")` sets the window title.
+- `self.resize(1200, 700)` and `self.setMinimumSize(900, 560)` set the window size.
+- The stylesheet defines the look of buttons, labels, frames, and inputs.
+
+Widgets created in the constructor:
+- `self.port_input = QLineEdit("12345")` is the port text box.
+- `self.connect_button = QPushButton("Connect")` starts the TCP connection.
+- `self.disconnect_button = QPushButton("Disconnect")` stops it.
+- `self.status_label = QLabel(...)` displays current status messages.
+- `self.plot_stack = QStackedWidget()` holds two plot widgets.
+- `self.plot_widget = VisPyPlotWidget()` is the single-channel view.
+- `self.all_channels_widget = AllChannelsPlotWidget()` is the full 32-channel view.
+- `self.channel_combo = QComboBox()` lets the user choose one channel.
+- `self.raw_button`, `self.filtered_button`, and `self.rms_button` select the signal processing mode.
+- `self.all_channels_button` toggles the all-channel plot.
+- `self.grid_button` toggles the plot grid lines.
+- `self.lock_view_button` toggles auto-fit on/off.
+- `self.offline_button = QPushButton("Open Offline Plot")` opens the Matplotlib review window.
+
+What the view does not do:
+- It does not decode TCP data.
+- It does not filter or compute RMS.
+- It only shows buttons and sends requests to the ViewModel.
+
+Signal wiring in `__init__`:
+These connections tell Qt what to do when a user interacts with the GUI.
+- `self.connect_button.clicked.connect(self._on_connect)`
+- `self.disconnect_button.clicked.connect(self._on_disconnect)`
+- `self.channel_combo.currentIndexChanged.connect(self._on_channel_changed)`
+- `self.raw_button.clicked.connect(lambda: self._on_mode_selected("raw"))`
+- `self.filtered_button.clicked.connect(lambda: self._on_mode_selected("filtered"))`
+- `self.rms_button.clicked.connect(lambda: self._on_mode_selected("rms"))`
+- `self.all_channels_button.toggled.connect(self._on_all_channels_toggled)`
+- `self.offline_button.clicked.connect(self.offline_plot_view.show)`
+- `self.lock_view_button.toggled.connect(self._on_lock_view_toggled)`
+- `self.grid_button.toggled.connect(self._on_grid_toggled)`
+
+These are the event handlers that run when the user clicks or toggles controls.
+
+ViewModel subscriptions in `__init__`:
+The view also listens for updates from the ViewModel.
+- `self.view_model.plot_updated.connect(self.plot_widget.update_plot)`
+- `self.view_model.all_channels_updated.connect(self.all_channels_widget.update_plot)`
+- `self.view_model.status_updated.connect(self._on_status_message)`
+- `self.view_model.connection_changed.connect(self._on_connection_changed)`
+- `self.view_model.stream_stats_updated.connect(self.stream_stats_label.setText)`
+
+This means the ViewModel can send data or status updates back to the view.
+
+Detailed method explanations:
+
+`_on_connect(self)`
+- This method runs when the user clicks the Connect button.
+- It reads the port text with `self.port_input.text()`.
+- It converts the text to a number using `int(...)`.
+- If the text is invalid, it calls `self._on_status_message("Invalid port — enter a number")`.
+- If valid, it calls `self.view_model.connect_to_server(port)`.
+
+`_on_disconnect(self)`
+- This method simply calls `self.view_model.disconnect()`.
+- The ViewModel stops the timer and closes the socket.
+
+`_on_channel_changed(self, channel_index)`
+- Runs when the user chooses another channel from the dropdown.
+- Calls `self.view_model.set_channel(channel_index)`.
+- Then updates the summary text with `_refresh_view_summary()`.
+
+`_on_mode_selected(self, mode)`
+- Runs when the user clicks Raw, Filtered, or RMS.
+- Calls `self.view_model.set_mode(mode)` to change the selected processing mode.
+- Calls `_apply_mode_style(mode)` to update the buttons and explanation label.
+- Calls `_refresh_view_summary()`.
+
+`_on_all_channels_toggled(self, checked)`
+- Runs when the Plot All Channels button is toggled.
+- Sets `self.channel_combo.setEnabled(not checked)` so channel selection is disabled in all-channel mode.
+- Switches the visible widget in `self.plot_stack` with `self.plot_stack.setCurrentIndex(1 if checked else 0)`.
+- Calls `self.view_model.set_all_channels_mode(checked)`.
+- Calls `_refresh_view_summary()`.
+
+`_on_lock_view_toggled(self, locked)`
+- When checked, it keeps the plot camera from auto-fitting.
+- It sets `self.plot_widget.autofit = not locked` and `self.all_channels_widget.autofit = not locked`.
+- This allows the user to zoom and examine one fixed view.
+
+`_on_grid_toggled(self, enabled)`
+- Shows or hides the background grid in both plot widgets.
+- It sets `self.plot_widget.show_grid = enabled` and `self.all_channels_widget.show_grid = enabled`.
+
+`_on_connection_changed(self, connected)`
+- Updates which buttons are enabled.
+- When `connected` is True:
+  - `self.connect_button` becomes disabled.
+  - `self.disconnect_button` becomes enabled.
+  - `self.lock_view_button.setChecked(False)` resets the zoom lock.
+- When disconnected:
+  - `self.offline_button` is only enabled if there is data in the buffer.
+- It also refreshes the view summary text.
+
+`_on_status_message(self, message)`
+- Shows a message in `self.status_label`.
+- It also changes label color based on the message.
+- For success messages it uses green styling.
+- For errors it uses red styling.
+- For neutral messages like "Disconnected" it uses grey styling.
+
+`_refresh_view_summary(self)`
+- Updates the small summary line under the plot.
+- It uses the current channel, mode, and connection state.
+- Example summary:
+  `Viewing: Channel 1 | RAW | rolling 10 s window | ready`
+
+`_apply_mode_style(self, mode)`
+- Sets the text in `self.mode_explanation_label`.
+- The label explains the selected mode:
+  - Raw mode shows the signal before extra processing.
+  - Filtered mode shows the 20–450 Hz bandpass result.
+  - RMS mode shows the envelope after RMS smoothing.
+- It also updates the plot widgets' visual style:
+  - `self.plot_widget.set_mode(mode)`
+  - `self.all_channels_widget.set_mode(mode)`
+
+**<span style="color:#1f618d">3. PLOTVIEW.PY</span>**
+-----------------
+This file contains the widgets that draw live signal plots.
+It uses VisPy because VisPy is fast for plotting streaming data.
+
+`VisPyPlotWidget`
+This widget shows a single signal trace for the selected channel.
+
+What it creates:
+- A `SceneCanvas` that is the drawing surface.
+- A left axis widget for amplitude.
+- A bottom axis widget for time.
+- A `scene.Line` visual for the signal.
+- Labels `"Amplitude"` and `"Time (s)"`.
+
+Important fields:
+- `self.autofit`: if True, the axes automatically adjust to fit new data.
+- `self._grid_show`: whether grid lines are visible.
+- `self._line_color`: the current color for the signal line.
+
+`set_mode(self, mode)`
+- Changes the line color to match the selected signal mode.
+- The line color is stored in `self._line_color`.
+- Then it calls `self.line.set_data(color=self._line_color)`.
+
+`show_grid` property
+- When set to True, grid lines appear behind the plot.
+- When set to False, those lines are hidden.
+- The property controls `self._grid_show` and updates the canvas.
+
+`update_plot(self, x, y)`
+- Receives new numerical data from the ViewModel.
+- Converts `x` and `y` to NumPy arrays.
+- Stacks them into `pos = np.column_stack((x, y))`.
+- Calls `self.line.set_data(pos=pos, color=self._line_color)`.
+- If `self.autofit` is enabled, it computes the new visible range and updates the camera.
+- If the grid is enabled, it calls `_update_grid(...)` to draw the grid.
+- Finally it redraws using `self.canvas.native.update()`.
+
+`_update_grid(self, x_min, x_max, y_min, y_max)`
+- Computes tick positions for time and amplitude.
+- Reuses or creates grid line visuals.
+- Draws vertical and horizontal grid lines at those tick positions.
+
+`AllChannelsPlotWidget`
+This widget shows all 32 channels at once.
+It stacks the channel traces vertically so they do not overlap.
+
+What it creates:
+- A `SceneCanvas` with axes and labels.
+- 32 `scene.Line` visuals, one per channel.
+- A color for each channel using `colorsys.hsv_to_rgb(...)`.
+- A separate opacity style for raw, filtered, and RMS modes.
+
+`set_mode(self, mode)`
+- Adjusts opacity for all 32 channel lines.
+- Uses `MODE_ALPHA` to make the chosen mode visually distinct.
+
+`update_plot(self, x, data_2d)`
+- Accepts `x` as a time axis and `data_2d` as a 32×N data matrix.
+- Computes vertical spacing using signal standard deviation:
+  `spacing = max(3.0 * np.std(data_2d), 1e-6)`.
+- For each channel `i`, it shifts the channel up by `i * spacing`.
+- Updates each line with `line.set_data(pos=np.column_stack((x, y)))`.
+- If `self.autofit` is True, it updates the camera for the full stack.
+- Shows grid lines if enabled.
+
+Why plotView is separate:
+- `mainView.py` does not need to know how VisPy draws data.
+- `plotView.py` focuses only on rendering and display logic.
+- This makes the code easier to maintain.
+
+**<span style="color:#1f618d">4. OFFLINEPLOTVIEW.PY</span>**
+------------------------
+This file opens a separate Matplotlib window for reviewing saved data.
+Offline mode is useful when the TCP stream is stopped and you want to inspect the recorded signal.
+
+`show(self)`
+- Checks if buffered data exists with `self.view_model.has_offline_data()`.
+- If there is no data, it sends the message:
+  `No data available for offline inspection`.
+- If data exists, it reads the current channel and mode from the ViewModel.
+- Calls `self.view_model.get_offline_data(channel, mode)`.
+- Creates a Matplotlib figure and plots `x` vs `y`.
+- Calls `_format_axes(...)` and `_add_controls(...)` to finish the window.
+
+`_format_axes(self, ax, channel, mode, sample_count, x)`
+- Sets the title to include channel number, mode, sample count, and time span.
+- Example title:
+  `Channel 1 - RAW (2304 samples, 5.0s)`.
+- Sets the X label to `Time (s)` and Y label to `Amplitude`.
+- Enables a light plot grid.
+
+`_add_controls(self, fig, ax, line, x)`
+- Creates a toolbar inside the Matplotlib window.
+- Adds a channel dropdown and mode buttons to the toolbar.
+- The buttons are regular Qt widgets (`QPushButton`, `QComboBox`).
+- When the user changes channel or mode, the local `redraw()` function runs.
+- `redraw()` fetches new data from the ViewModel and updates the plotted line.
+- It then calls `fig.canvas.draw_idle()` so the plot refreshes immediately.
+
+Why offlinePlotView is separate:
+- It uses Matplotlib instead of VisPy.
+- It does not update continuously from the timer.
+- It is an inspection view for data that is already captured.
+
+**<span style="color:#1f618d">5. MAINVIEWMODEL.PY</span>**
+----------------------
+This file is the glue between the GUI and the signal backend.
+It is a `QObject`, so it can emit Qt signals and use `QTimer`.
+
+How this file works:
+- It keeps the selected channel, mode, and whether all channels are shown.
+- It controls a timer that fires every 50 milliseconds.
+- Each timer tick reads new data from the signal model.
+- It emits signals that the view listens to.
+
+Signals defined in the class:
+- `plot_updated = Signal(object, object)` – sends `x` and `y` arrays for one channel.
+- `all_channels_updated = Signal(object, object)` – sends `x` and 32-channel data.
+- `status_updated = Signal(str)` – sends text messages for the status label.
+- `connection_changed = Signal(bool)` – tells the view whether the app is connected.
+- `stream_stats_updated = Signal(str)` – sends the rolling buffer summary text.
+
+Constructor: `__init__(self)`
+- Creates `self.model = SignalModel()`.
+- Sets defaults:
+  - `self.selected_channel = 0`
+  - `self.selected_mode = "raw"`
+  - `self.show_all_channels = False`
+- Creates `self.timer = QTimer()`.
+- `self.timer.setInterval(50)` makes it run every 50 ms.
+- `self.timer.timeout.connect(self._on_timer_tick)` connects the timer to the update method.
+
+`connect_to_server(self, port)`
+- `try:` calls `self.model.connect(port)`.
+- If success, starts the timer with `self.timer.start()`.
+- Emits `status_updated` so the view shows a success message.
+- Emits `connection_changed(True)`.
+- Emits initial stream stats with `_emit_stream_stats()`.
+- If connection fails, catches `ConnectionRefusedError` and `OSError` and sends a helpful message.
+
+`disconnect(self)`
+- Calls `self.model.disconnect()`.
+- Stops the timer with `self.timer.stop()`.
+- Emits a disconnected status message.
+- Emits `connection_changed(False)`.
+- Emits the latest stream stats.
+
+`set_channel(self, channel_index)`
+- Updates `self.selected_channel`.
+- Calls `_redraw_if_offline()` so the screen refreshes if we are not connected.
+
+`set_mode(self, mode)`
+- Updates `self.selected_mode`.
+- Calls `_redraw_if_offline()`.
+
+`set_all_channels_mode(self, enabled)`
+- Updates `self.show_all_channels`.
+- Calls `_redraw_if_offline()`.
+
+`_redraw_if_offline(self)`
+- This method runs when the connection is stopped.
+- If the model is disconnected and data exists,
+  it emits one plot update so the user sees the selected mode/channel immediately.
+- It decides whether to emit:
+  - `self.all_channels_updated.emit(x, data_2d)` or
+  - `self.plot_updated.emit(x, y)`.
+
+`channel_count(self)` property
+- Returns the total number of channels from the model.
+- The offline window uses this to fill the channel dropdown.
+
+`has_offline_data(self)`
+- Returns `self.model.has_data()`.
+- The offline window uses this to decide whether it can open.
+
+`get_offline_data(self, channel, mode)`
+- Returns time and signal arrays from the model.
+- Used by the offline plot window.
+
+`_on_timer_tick(self)`
+- Runs every 50 ms when the app is connected.
+- Calls `self.model.receive_data()` to read any new TCP packets.
+- If the server disconnected, it stops the timer and emits disconnect signals.
+- If there is no new data yet, it still updates the stats label.
+- If data exists, it gets the time axis and the selected signal arrays.
+- If `self.show_all_channels` is True, it emits `all_channels_updated`.
+- Otherwise, it emits `plot_updated` for the selected single channel.
+- Then it calls `_emit_stream_stats()`.
+
+`_emit_stream_stats(self)`
+- Builds a one-line summary from the model values.
+- It uses:
+  - `self.model.total_samples_received`
+  - `self.model.get_signal_time_seconds()`
+  - `self.model.data_buffer.shape[1]`
+  - `self.model.SAMPLING_RATE`
+  - `self.model.WINDOW_SECONDS`
+- Example text:
+  `Signal time:  2.50 s   |   Packets:   10   |   Samples:   288   |   Buffer:  2.5 / 10 s`
+
+**<span style="color:#1f618d">6. LIVE VIEW FLOW</span>**
+==================
+This explains what happens after each user action.
+
+Connect flow:
+- The user clicks Connect.
+- `MainView._on_connect()` reads the port and calls `MainViewModel.connect_to_server(port)`.
+- The ViewModel opens the TCP connection in `SignalModel`.
+- If the connection succeeds, the ViewModel starts a timer.
+- The view updates buttons and shows a connected status message.
+
+Data flow while connected:
+- Every 50 ms, `MainViewModel._on_timer_tick()` runs.
+- It calls `self.model.receive_data()` to read network data.
+- The model fills its buffer with new samples.
+- The ViewModel asks the model for the current time axis and signal data.
+- The ViewModel emits `plot_updated` or `all_channels_updated`.
+- The plot widgets redraw using `update_plot(...)`.
+
+Disconnect flow:
+- The user clicks Disconnect.
+- `MainView._on_disconnect()` calls `MainViewModel.disconnect()`.
+- The timer stops and the socket closes.
+- The status message changes to indicate the buffer is available offline.
+- If the user changes mode or channel, `_redraw_if_offline()` refreshes the plot immediately.
+
+**<span style="color:#1f618d">7. WHY THIS FRONTEND IS CLEAN AND EASY TO EXTEND</span>**
+=================================================
+The frontend uses clear separation:
+- `mainView.py`: UI controls and layout.
+- `plotView.py`: drawing logic only.
+- `offlinePlotView.py`: separate offline review window.
+- `mainViewModel.py`: state management and timed updates.
+- `signal_model.py`: backend data handling.
+
+This means:
+- If you want to change the layout, edit `mainView.py`.
+- If you want to change how plots look, edit `plotView.py`.
+- If you want to change offline behavior, edit `offlinePlotView.py`.
+- If you want to add a new mode or change data flow, edit `mainViewModel.py`.
+
+**<span style="color:#1f618d">8. PRACTICAL EXAMPLES FOR TEAMMATES</span>**
+-----------------------------------
+Add a new mode:
+1. Add a new `QPushButton` in `mainView.py`.
+2. Add it to the mode button group.
+3. Handle it in `_on_mode_selected(self, mode)`.
+4. Update `mainViewModel.set_mode()` to accept the new mode.
+5. Add support in `signal_model.py` for the new signal output.
+
+Change the default port:
+- Edit `self.port_input = QLineEdit("12345")` in `mainView.py`.
+
+Change the plot title or labels:
+- Edit `_format_axes(...)` in `offlinePlotView.py` for Matplotlib.
+- Edit the axis label text in `plotView.py` for the live plot.
+
+That is the frontend I implemented, with actual methods and beginner-friendly descriptions of how the GUI works.

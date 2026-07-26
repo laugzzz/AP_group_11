@@ -35,7 +35,7 @@ class MainViewModel(QObject):
         #self._on_timer_tick = the action (your function)
         # 50ms later → Qt fires timeout → _on_timer_tick() runs automatically
 
-    def connect(self, port):
+    def connect_to_server(self, port):
         """Called when user clicks the Connect button."""
         try:
             self.model.connect(port)

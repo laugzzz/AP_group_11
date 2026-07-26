@@ -24,6 +24,17 @@ def _nice_step(span, target_n=8):
     return nice * mag
 
 
+def _configure_axis_spacing(y_axis, x_axis):
+    """Keep axis labels close while leaving readable room around tick numbers."""
+    for axis_widget in (y_axis, x_axis):
+        axis_widget.axis.major_tick_length = 6
+        axis_widget.axis.minor_tick_length = 3
+        axis_widget.axis.tick_label_margin = 18
+
+    y_axis.width_max = 64
+    x_axis.height_max = 44
+
+
 class VisPyPlotWidget(QWidget):
     """VisPy canvas embedded in a PySide6 widget for live signal display."""
 
@@ -56,11 +67,10 @@ class VisPyPlotWidget(QWidget):
         self.x_axis = scene.AxisWidget(
             orientation="bottom", axis_color="black", tick_color="black", text_color="black"
         )
-        self.y_axis.width_max = 80
-        self.x_axis.height_max = 40
+        _configure_axis_spacing(self.y_axis, self.x_axis)
 
         # col=0: rotated Y title, col=1: y_axis, col=2: plot view / x_axis
-        y_label = scene.Label("Amplitude (mV)", color="black", rotation=-90)
+        y_label = scene.Label("Amplitude (ADC counts)", color="black", rotation=-90)
         y_label.width_max = 20
         grid.add_widget(y_label, row=0, col=0)
 
@@ -77,7 +87,7 @@ class VisPyPlotWidget(QWidget):
         self.y_axis.link_view(self.view)
 
         # Grid: pool of scene.Line visuals (hidden until needed).
-        # Positioned at nice tick values (0.5s, 1s... / 1mV, 2mV...) each frame.
+        # Positioned at nice tick values based on the visible time and amplitude ranges.
         self._grid_show = False
         self._grid_visuals = []  # grown on demand, never shrunk
         self._grid_color = (0.65, 0.65, 0.65, 1.0)
@@ -93,7 +103,7 @@ class VisPyPlotWidget(QWidget):
 
         # Set a clean initial camera range so axes show 0..1 instead of VisPy's
         # internal default (random small negative values).
-        self.view.camera.set_range(x=(0.0, 1.0), y=(0.0, 1.0))
+        self.view.camera.set_range(x=(0.0, 1.0), y=(0.0, 1.0), margin=0)
 
         layout.addWidget(self.canvas.native)
 
@@ -121,7 +131,7 @@ class VisPyPlotWidget(QWidget):
         return self._grid_visuals[idx]
 
     def _update_grid(self, x_min, x_max, y_min, y_max):
-        """Draw grid lines at nice tick positions (e.g. every 0.5s, every 1mV)."""
+        """Draw grid lines at readable time and amplitude intervals."""
         x_step = _nice_step(x_max - x_min)
         y_step = _nice_step(y_max - y_min)
 
@@ -174,7 +184,7 @@ class VisPyPlotWidget(QWidget):
             x_min, x_max = float(x.min()), float(x.max())
             y_min = float(y.min()) - y_pad
             y_max = float(y.max()) + y_pad
-            self.view.camera.set_range(x=(x_min, x_max), y=(y_min, y_max))
+            self.view.camera.set_range(x=(x_min, x_max), y=(y_min, y_max), margin=0)
         else:
             rect = self.view.camera.rect
             x_min, x_max = rect.left, rect.right
@@ -224,11 +234,10 @@ class AllChannelsPlotWidget(QWidget):
         self.x_axis = scene.AxisWidget(
             orientation="bottom", axis_color="black", tick_color="black", text_color="black"
         )
-        self.y_axis.width_max = 80
-        self.x_axis.height_max = 40
+        _configure_axis_spacing(self.y_axis, self.x_axis)
 
         # col=0: rotated Y title, col=1: y_axis, col=2: plot view / x_axis
-        y_label = scene.Label("Amplitude (mV)", color="black", rotation=-90)
+        y_label = scene.Label("Amplitude (ADC counts)", color="black", rotation=-90)
         y_label.width_max = 20
         grid.add_widget(y_label, row=0, col=0)
 
@@ -358,7 +367,11 @@ class AllChannelsPlotWidget(QWidget):
             cam_x_min, cam_x_max = float(x.min()), float(x.max())
             cam_y_min = y_min - y_pad
             cam_y_max = y_max + y_pad
-            self.view.camera.set_range(x=(cam_x_min, cam_x_max), y=(cam_y_min, cam_y_max))
+            self.view.camera.set_range(
+                x=(cam_x_min, cam_x_max),
+                y=(cam_y_min, cam_y_max),
+                margin=0,
+            )
         else:
             rect = self.view.camera.rect
             cam_x_min, cam_x_max = rect.left, rect.right

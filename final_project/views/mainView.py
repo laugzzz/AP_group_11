@@ -355,7 +355,7 @@ class MainView(QMainWindow):
             self._on_status_message("Invalid port — enter a number")
             return
 
-        self.view_model.connect(port)
+        self.view_model.connect_to_server(port)
 
     def _on_disconnect(self):
         """Ask ViewModel to disconnect."""
