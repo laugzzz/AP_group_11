@@ -125,6 +125,18 @@ class OfflinePlotView:
                 color: #1f2937;
                 font-size: 12px;
             }
+            /* Ensure the dropdown popup (the QAbstractItemView) has readable colors */
+            QToolBar QComboBox QAbstractItemView {
+                background-color: white;
+                color: #111827;
+                selection-background-color: #2a7fd4;
+                selection-color: white;
+                min-width: 130px;
+            }
+            QToolBar QComboBox QAbstractItemView::item {
+                min-height: 24px;
+                padding: 3px 8px;
+            }
             QToolBar QPushButton {
                 min-width: 76px;
                 min-height: 26px;

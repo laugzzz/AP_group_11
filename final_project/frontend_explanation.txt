@@ -4,8 +4,8 @@ I built the frontend so the GUI is separated from the signal processing and TCP 
 This document explains each file, the key methods, and how the PySide6 frontend interacts with the ViewModel.
 It is written for teammates who do not have prior frontend experience.
 
-**<span style="color:#1f618d">1. OVERALL ARCHITECTURE</span>**
-=======================
+1. OVERALL ARCHITECTURE
+
 The frontend follows an MVVM-style structure. This means:
 - View files only build the interface and show data.
 - The ViewModel keeps the current state and acts as a bridge.
@@ -23,8 +23,7 @@ Why this separation helps:
 - The plotting code does not need to know how modes are selected.
 - The ViewModel connects only the pieces that need to talk to each other.
 
-**<span style="color:#1f618d">2. MAINVIEW.PY</span>**
-----------------
+2. `mainView.py`
 This file creates the application window and user controls.
 It uses PySide6 widgets and layouts.
 
@@ -41,26 +40,26 @@ How PySide6 works here:
 - The `clicked` and `toggled` events are connected to methods with `.connect(...)`.
 
 Constructor: `__init__(self, view_model)`
-- `self.view_model = view_model` stores the ViewModel instance.
-- `self.offline_plot_view = OfflinePlotView(view_model)` creates the offline window helper.
-- `self.setWindowTitle("EMG Signal Viewer")` sets the window title.
-- `self.resize(1200, 700)` and `self.setMinimumSize(900, 560)` set the window size.
+- `self.view_model = view_model` -- stores the ViewModel instance.
+- `self.offline_plot_view = OfflinePlotView(view_model)` -- creates the offline window helper.
+- `self.setWindowTitle("EMG Signal Viewer")` --  sets the window title.
+- `self.resize(1200, 700)` and `self.setMinimumSize(900, 560)` --  set the window size.
 - The stylesheet defines the look of buttons, labels, frames, and inputs.
 
 Widgets created in the constructor:
-- `self.port_input = QLineEdit("12345")` is the port text box.
-- `self.connect_button = QPushButton("Connect")` starts the TCP connection.
-- `self.disconnect_button = QPushButton("Disconnect")` stops it.
-- `self.status_label = QLabel(...)` displays current status messages.
-- `self.plot_stack = QStackedWidget()` holds two plot widgets.
-- `self.plot_widget = VisPyPlotWidget()` is the single-channel view.
-- `self.all_channels_widget = AllChannelsPlotWidget()` is the full 32-channel view.
-- `self.channel_combo = QComboBox()` lets the user choose one channel.
-- `self.raw_button`, `self.filtered_button`, and `self.rms_button` select the signal processing mode.
-- `self.all_channels_button` toggles the all-channel plot.
-- `self.grid_button` toggles the plot grid lines.
-- `self.lock_view_button` toggles auto-fit on/off.
-- `self.offline_button = QPushButton("Open Offline Plot")` opens the Matplotlib review window.
+- `self.port_input = QLineEdit("12345")`                              is the port text box.
+- `self.connect_button = QPushButton("Connect")`                      starts the TCP connection.
+- `self.disconnect_button = QPushButton("Disconnect")`                stops it.
+- `self.status_label = QLabel(...)`                                   displays current status messages.
+- `self.plot_stack = QStackedWidget()`                                holds two plot widgets.
+- `self.plot_widget = VisPyPlotWidget()`                              is the single-channel view.
+- `self.all_channels_widget = AllChannelsPlotWidget()`                is the full 32-channel view.
+- `self.channel_combo = QComboBox()`                                  lets the user choose one channel.
+- `self.raw_button`, `self.filtered_button`, and `self.rms_button`    select the signal processing mode.
+- `self.all_channels_button`                                          toggles the all-channel plot.
+- `self.grid_button`                                                  toggles the plot grid lines.
+- `self.lock_view_button`                                             toggles auto-fit on/off.
+- `self.offline_button = QPushButton("Open Offline Plot")`            opens the Matplotlib review window.
 
 What the view does not do:
 - It does not decode TCP data.
@@ -165,8 +164,7 @@ Detailed method explanations:
   - `self.plot_widget.set_mode(mode)`
   - `self.all_channels_widget.set_mode(mode)`
 
-**<span style="color:#1f618d">3. PLOTVIEW.PY</span>**
------------------
+3. `plotView.py`
 This file contains the widgets that draw live signal plots.
 It uses VisPy because VisPy is fast for plotting streaming data.
 
@@ -237,8 +235,7 @@ Why plotView is separate:
 - `plotView.py` focuses only on rendering and display logic.
 - This makes the code easier to maintain.
 
-**<span style="color:#1f618d">4. OFFLINEPLOTVIEW.PY</span>**
-------------------------
+4. `offlinePlotView.py`
 This file opens a separate Matplotlib window for reviewing saved data.
 Offline mode is useful when the TCP stream is stopped and you want to inspect the recorded signal.
 
@@ -271,8 +268,7 @@ Why offlinePlotView is separate:
 - It does not update continuously from the timer.
 - It is an inspection view for data that is already captured.
 
-**<span style="color:#1f618d">5. MAINVIEWMODEL.PY</span>**
-----------------------
+5. `mainViewModel.py`
 This file is the glue between the GUI and the signal backend.
 It is a `QObject`, so it can emit Qt signals and use `QTimer`.
 
@@ -367,8 +363,7 @@ Constructor: `__init__(self)`
 - Example text:
   `Signal time:  2.50 s   |   Packets:   10   |   Samples:   288   |   Buffer:  2.5 / 10 s`
 
-**<span style="color:#1f618d">6. LIVE VIEW FLOW</span>**
-==================
+6. LIVE VIEW FLOW
 This explains what happens after each user action.
 
 Connect flow:
@@ -393,8 +388,7 @@ Disconnect flow:
 - The status message changes to indicate the buffer is available offline.
 - If the user changes mode or channel, `_redraw_if_offline()` refreshes the plot immediately.
 
-**<span style="color:#1f618d">7. WHY THIS FRONTEND IS CLEAN AND EASY TO EXTEND</span>**
-=================================================
+7. WHY THIS FRONTEND IS CLEAN AND EASY TO EXTEND
 The frontend uses clear separation:
 - `mainView.py`: UI controls and layout.
 - `plotView.py`: drawing logic only.
@@ -408,20 +402,6 @@ This means:
 - If you want to change offline behavior, edit `offlinePlotView.py`.
 - If you want to add a new mode or change data flow, edit `mainViewModel.py`.
 
-**<span style="color:#1f618d">8. PRACTICAL EXAMPLES FOR TEAMMATES</span>**
------------------------------------
-Add a new mode:
-1. Add a new `QPushButton` in `mainView.py`.
-2. Add it to the mode button group.
-3. Handle it in `_on_mode_selected(self, mode)`.
-4. Update `mainViewModel.set_mode()` to accept the new mode.
-5. Add support in `signal_model.py` for the new signal output.
 
-Change the default port:
-- Edit `self.port_input = QLineEdit("12345")` in `mainView.py`.
 
-Change the plot title or labels:
-- Edit `_format_axes(...)` in `offlinePlotView.py` for Matplotlib.
-- Edit the axis label text in `plotView.py` for the live plot.
 
-That is the frontend I implemented, with actual methods and beginner-friendly descriptions of how the GUI works.

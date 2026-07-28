@@ -70,7 +70,7 @@ class VisPyPlotWidget(QWidget):
         _configure_axis_spacing(self.y_axis, self.x_axis)
 
         # col=0: rotated Y title, col=1: y_axis, col=2: plot view / x_axis
-        y_label = scene.Label("Amplitude (ADC counts)", color="black", rotation=-90)
+        y_label = scene.Label("Amplitude", color="black", rotation=-90)
         y_label.width_max = 20
         grid.add_widget(y_label, row=0, col=0)
 
@@ -237,7 +237,7 @@ class AllChannelsPlotWidget(QWidget):
         _configure_axis_spacing(self.y_axis, self.x_axis)
 
         # col=0: rotated Y title, col=1: y_axis, col=2: plot view / x_axis
-        y_label = scene.Label("Amplitude (ADC counts)", color="black", rotation=-90)
+        y_label = scene.Label("Amplitude", color="black", rotation=-90)
         y_label.width_max = 20
         grid.add_widget(y_label, row=0, col=0)
 
