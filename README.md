@@ -1,178 +1,486 @@
-# AP Group 11 - EMG Signal Viewer
+# AP_Group_11 TCP Signal Visualiser
 
-PySide6 desktop application for live EMG signal visualization from a local TCP
-server. The project uses an MVVM structure:
+A PySide6 desktop application for real-time visualisation and offline inspection of multi-channel EMG signals streamed over TCP.
 
-- `TCP_Server/` streams prerecorded EMG packets from `recording.pkl`
-- `final_project/models/` handles TCP reception, buffering, and processing
-- `final_project/viewmodels/` connects model state to the GUI
-- `final_project/views/` contains the PySide6 and VisPy widgets
+**Group:** Ekhlass · Laura · Radhika 
 
-## Team
+Applied Programming, FAU Erlangen-Nürnberg(Summer Semester 2026)
 
-Group 11
+---
 
-Team members and responsibilities:
+# Table of Contents:-
 
-- Ekhlass - backend and all remaining project implementation
-- Laura Uruci - frontend and user interface
-- Radhika - project documentation
+- Project Overview
+- Team Responsibilities
+- Architecture (MVVM)
+- Data Flow
+- Features
+- Signal Processing
+- Installation
+- Running the Application
+- Using the Application
+- Testing
+- Error Handling
+- Project Structure
+- Dependencies
+- License
 
-## Setup
+---
 
-Use Python 3.10 or newer.
+# Project Overview:-
 
-### Create and activate the virtual environment
+TCP Signal Visualizer is a desktop application developed using **PySide6** to receive, process, and visualize Electromyography (EMG) signals transmitted over a TCP connection in real time.
 
-The commands may differ slightly depending on your operating system.
+The application acts as a TCP client that continuously receives streamed EMG packets from a TCP server, processes the incoming data, and visualizes it using **VisPy** for high-performance real-time rendering. Once the recording session has finished, users can inspect the complete recording offline using **Matplotlib**.
 
-- On macOS/Linux:
+The software follows the **Model-View-ViewModel (MVVM)** architecture, providing a clear separation between the graphical interface, business logic, and data processing components. This improves maintainability, scalability, and code organization.
+
+### Key Features
+
+- Real-time TCP communication
+- Live EMG visualization using VisPy
+- Offline recording inspection using Matplotlib
+- Raw signal visualization
+- RMS signal visualization
+- Bandpass filtered signal visualization
+- Single-channel visualization
+- Multi-channel visualization
+- Thread-safe signal buffering
+- Clean MVVM architecture
+- Automated testing
+- Responsive PySide6 graphical interface
+
+---
+
+# Team Responsibilities:-
+
+| Member | Primary Role | Contributions |
+|---------|--------------|---------------|
+| **Ekhlass** | Backend | Implemented the backend logic including TCP communication, signal buffering, signal processing, and Model implementation. |
+| **Laura** | Frontend | Developed the PySide6 graphical interface, VisPy live plotting, offline plotting, and ViewModel integration. |
+| **Radhika** | Repository & Documentation | Managed the GitHub repository, project integration, testing support, and project documentation. |
+
+---
+
+# Architecture (MVVM):-
+
+The project follows the **Model–View–ViewModel (MVVM)** architecture, ensuring that each component has a clearly defined responsibility.
+
+```text
++--------------------------------------------------------------+
+|                           VIEW                               |
+|                                                              |
+|  • PySide6 User Interface                                    |
+|  • Live VisPy Plot                                           |
+|  • Offline Matplotlib Plot                                   |
+|  • User Controls                                              |
++---------------------------+----------------------------------+
+                            |
+                     Qt Signals / Slots
+                            |
++---------------------------v----------------------------------+
+|                       VIEWMODEL                              |
+|                                                              |
+|  • Application State                                         |
+|  • Signal Mode Selection                                     |
+|  • Channel Selection                                         |
+|  • Communication with Model                                  |
++---------------------------+----------------------------------+
+                            |
+                        Method Calls
+                            |
++---------------------------v----------------------------------+
+|                          MODEL                               |
+|                                                              |
+|  • TCP Communication                                         |
+|  • Data Buffer                                                |
+|  • Signal Processing                                          |
+|  • Recording Management                                       |
++--------------------------------------------------------------+
+```
+
+# Responsibilities:-
+
+### View
+
+Responsible for all graphical components of the application.
+
+- Displays the live EMG signal.
+- Displays the offline recording.
+- Handles buttons, dropdowns, and user interaction.
+- Never communicates directly with the TCP socket.
+
+### ViewModel
+
+Acts as the bridge between the View and the Model.
+
+Responsibilities include:
+- Managing application state.
+- Selecting signal processing modes.
+- Providing processed data to the GUI.
+- Updating plots through Qt signals.
+
+### Model
+
+Responsible for backend functionality.
+
+This layer performs:
+
+- TCP communication
+- Signal buffering
+- Signal processing
+- Recording management
+- Data storage
+
+---
+
+# Data Flow:-
+
+The following diagram illustrates how EMG data moves through the application.
+
+```text
+TCP Server
+      │
+      ▼
+TCP Client
+      │
+      ▼
+Signal Buffer
+      │
+      ▼
+Signal Processing
+      │
+      ▼
+Main ViewModel
+      │
+      ▼
+PySide6 GUI
+      │
+      ▼
+VisPy Live Plot
+      │
+      ▼
+Offline Matplotlib Plot
+```
+
+### Data Flow Description
+
+1. The TCP server continuously streams EMG packets.
+
+2. The TCP client receives incoming packets.
+
+3. The Model stores incoming data inside a thread-safe signal buffer.
+
+4. Signal processing (Raw, RMS or Filtered) is applied.
+
+5. The ViewModel requests processed data from the Model.
+
+6. The View updates the VisPy live plot.
+
+7. After disconnecting, the recorded buffer becomes available for offline inspection using Matplotlib.
+
+---
+
+# Signal Processing:-
+
+The application provides three different signal processing modes, allowing users to inspect the EMG data from different perspectives.
+
+## Data Format
+
+Each packet received from the TCP server contains multi-channel EMG data.
+
+| Parameter | Value |
+|------------|-------|
+| Channels | 32 |
+| Samples per Channel | 18 |
+| Data Type | Float64 |
+| Transmission | TCP |
+
+The incoming packets are reconstructed into NumPy arrays before being processed.
+
+---
+
+## Raw Signal
+
+The **Raw** mode displays the incoming EMG signal exactly as it is received from the TCP server without any additional processing.
+
+This mode is useful when inspecting the original recording.
+
+---
+
+## RMS (Root Mean Square)
+
+The RMS mode computes the Root Mean Square over a sliding window, providing a smoother representation of muscle activity.
+
+Formula:
+
+```text
+              __________________
+             / Σ(x²)
+RMS = √      ----------
+                 N
+```
+
+Advantages:
+
+- Reduces signal fluctuations
+- Highlights muscle activation
+- Produces a smoother waveform
+- Makes comparisons easier
+
+---
+
+## Bandpass Filter
+
+The Filtered mode applies a Butterworth Bandpass Filter to remove unwanted frequencies while preserving the useful EMG signal.
+
+| Parameter | Value |
+|------------|-------|
+| Filter Type | Butterworth Bandpass |
+| Purpose | Remove low and high frequency noise |
+
+Filtering improves the quality of the visualization by reducing unwanted disturbances in the signal.
+
+---
+
+# Prerequisites:-
+
+Before running the project, ensure the following software is installed:
+
+- Python **3.11 or later**
+- Git
+- pip (included with Python)
+
+Verify the installation by running:
+
+```bash
+python --version
+git --version
+pip --version
+```
+
+# Installation:-
+
+Follow the steps below to install and run the project.
+
+## Step 1 – Clone the Repository
+
+The final submission is available in the **final-submission** branch.
+
+Clone the repository using:
+
+```bash
+git clone --branch final-submission https://github.com/laugzzz/AP_group_11.git
+```
+
+Navigate to the project directory:
 
 ```bash
 cd AP_group_11
-python -m venv .venv 
+```
+
+The command above automatically checks out the **final-submission** branch.
+
+---
+
+## Step 2 – Create a Virtual Environment
+
+Creating a virtual environment is recommended to avoid dependency conflicts.
+
+### Windows
+
+```bash
+python -m venv .venv
+
+.venv\Scripts\activate
+```
+
+### Linux / macOS
+
+```bash
+python3 -m venv .venv
+
 source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 ```
 
-- On Windows, the command can be either `python` or `py` depending on your setup.
- 
-
-```powershell
-cd AP_group_11
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-py -m pip install --upgrade pip
-py -m pip install -r requirements.txt
-```
-
-If PowerShell blocks the activation script, run this once and then try again:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
-
-### Troubleshooting environment issues
-
-If you see import errors such as `ModuleNotFoundError` or `ImportError` for
-NumPy, Pillow, Matplotlib, VisPy, or other scientific packages, the virtual
-environment may be broken or using incompatible packages. In that case,
-recreate the environment and reinstall the dependencies:
-
-```powershell
-Remove-Item -Recurse -Force .venv
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-py -m pip install --upgrade pip
-py -m pip install -r requirements.txt
-```
-
-Previous errors included missing compiled modules such as `_multiarray_umath`,
-`_imaging`, and `vispy.visuals.text._sdf_cpu`, which were resolved by
-reinstalling the affected packages inside the same virtual environment.
-
-Running the project from the same activated environment usually resolves these
-issues.
-
-## Run in VS Code
-
-Open the project folder in VS Code, start `TCP_Server/main.py`, then open
-`final_project/main.py` and press Run.
-
-In the GUI, keep the port set to `12345` and press **Connect**.
-
-You can also use the Run and Debug panel and choose:
+After activation, your terminal should display:
 
 ```text
-Run EMG Signal Viewer
+(.venv)
 ```
 
-## Run from Terminal
+---
 
-If you prefer running the server and GUI separately, open two terminals in the
-project folder.
+## Step 3 – Install Dependencies
 
-Terminal 1 - start the TCP server:
+Install all required Python packages.
 
-```powershell
-py TCP_Server/main.py
+```bash
+pip install -r requirements.txt
 ```
 
-Leave this terminal open. It should print:
+This command installs all dependencies listed in the `requirements.txt` file.
+
+---
+
+# Running the Application:-
+
+The application consists of two separate programs:
+
+1. TCP Server
+2. TCP Client (GUI)
+
+**The TCP Server must always be started before launching the client application.**
+
+---
+
+## Terminal 1 – Start the TCP Server
+
+Open a terminal.
+
+Navigate to the project directory.
+
+Run:
+
+```bash
+python TCP_Server/main.py
+```
+
+Keep this terminal running while using the application.
+
+---
+
+## Terminal 2 – Launch the GUI
+
+Open another terminal.
+
+Navigate to the project directory.
+
+Run:
+
+```bash
+python main.py
+```
+
+The graphical user interface will open.
+
+---
+
+# Using the Application:-
+
+## Controls
+
+| Control | Type | Description |
+|----------|------|-------------|
+| Port | Input Field | Enter the TCP server port number |
+| Connect | Button | Starts TCP communication |
+| Disconnect | Button | Stops data streaming |
+| Signal Mode | Radio Buttons | Raw, RMS and Filtered modes |
+| Channel | Dropdown | Select the desired EMG channel |
+| Plot View | Toggle | Switch between single and multi-channel views |
+| Offline Inspection | Button | Opens the recorded signal in Matplotlib |
+
+---
+
+# Typical Workflow:-
+
+1. Start the TCP Server.
+2. Launch the GUI application.
+3. Enter the TCP server port.
+4. Click **Connect**.
+5. Observe the live EMG signal.
+6. Select a signal processing mode.
+7. Choose an EMG channel.
+8. Switch between single and multi-channel views.
+9. Click **Disconnect**.
+10. Open **Offline Inspection** to review the recorded data.
+
+---
+
+# Testing:-
+
+The repository includes test scripts for verifying application behaviour.
+
+### Run Without TCP Server
+
+```bash
+python test_without_tcp.py
+```
+
+### Run With TCP Server
+
+Start the TCP server first, then execute:
+
+```bash
+python test_with_tcp.py
+```
+
+---
+
+# Error Handling:-
+
+The application handles the following situations without crashing:
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Invalid Port | Displays an appropriate error message |
+| Server Not Running | Connection fails gracefully |
+| Lost Connection | Streaming stops safely |
+| Empty Recording | Offline plotting is disabled |
+| Invalid Channel | Input validation prevents errors |
+| Socket Exceptions | Errors are reported to the user |
+
+---
+
+# Project Structure:-
 
 ```text
-Server started on 127.0.0.1:12345
+AP_group_11/
+│
+├── main.py
+├── Constants.py
+├── requirements.txt
+├── README.md
+│
+├── TCP_Server/
+│   └── main.py
+│
+├── models/
+│
+├── viewmodels/
+│
+├── views/
+│
+├── tests/
+│   ├── test_with_tcp.py
+│   └── test_without_tcp.py
+│
+└── assets/
 ```
 
-Terminal 2 - start the GUI:
+---
 
-```powershell
-py final_project/main.py
+# Dependencies:-
+
+| Package | Purpose |
+|----------|---------|
+| NumPy | Numerical computations and array manipulation |
+| SciPy | Signal processing algorithms |
+| Matplotlib | Offline visualization |
+| PySide6 | Desktop graphical user interface |
+| VisPy | High-performance real-time visualization |
+| PyOpenGL | OpenGL backend required by VisPy |
+
+Install all dependencies using:
+
+```bash
+pip install -r requirements.txt
 ```
 
-If your device uses `python` instead of `py`, replace `py` with `python` in the
-commands above. On Windows, the important part is to run the command from the
-same activated virtual environment and to use the full path if needed, for
-example:
+---
 
-```powershell
-py C:\Users\fatim\Documents\AP_group_11\final_project\main.py
-```
+# License:-
 
-In the GUI, keep the port set to `12345` and press **Connect**.
+This project was developed as the final project for the **Applied Programming** course at **Friedrich-Alexander-Universität Erlangen–Nürnberg (FAU)** during the **Summer Semester 2026**.
 
-## How to Use
-
-- Press **Connect** to start receiving streamed EMG packets.
-- Use the **Channel** dropdown to inspect one channel at a time.
-- Press **Plot All Channels** to show all 32 channels with vertical offsets.
-- If **Plot All Channels** is pressed, the **Channel** button cannot be used
-  until the plot-all option is turned off again.
-- Use **Raw**, **Filtered**, and **RMS** to switch signal modes.
-- Use **Grid** to show/hide plot grid lines.
-- Use **Lock View** to stop auto-fitting and manually pan/zoom the plot.
-- After disconnecting or after the stream ends, press **Open Offline Plot** to
-  inspect the buffered data with Matplotlib.
-
-## Signal Processing
-
-- Raw mode shows the original ADC values received from the TCP server.
-- Filtered mode applies a 4th-order Butterworth bandpass filter from 20 Hz to
-  450 Hz.
-- RMS mode first filters the signal, then computes the RMS envelope using a
-  100 ms moving window.
-- The live view keeps a rolling 10-second buffer.
-
-## TCP Data Format
-
-The TCP server sends raw bytes. The client expects the same data contract used
-in Exercise 5:
-
-- 32 channels
-- 18 samples per packet
-- `float64` values
-- one packet = `32 x 18 x 8 = 4608` bytes
-
-The client collects incoming bytes in a byte buffer, extracts complete packets,
-reshapes them to `(32, 18)`, and appends them to the rolling data buffer.
-
-## MVVM Structure
-
-- Model: `final_project/models/signal_model.py`
-  Handles TCP connection, byte buffering, packet reconstruction, rolling buffer,
-  and signal processing.
-- ViewModel: `final_project/viewmodels/mainViewModel.py`
-  Owns GUI state, starts/stops the timer, asks the model for data, and emits Qt
-  signals to the view.
-- View: `final_project/views/mainView.py` and `final_project/views/plotView.py`
-  Builds the GUI and displays live VisPy plots.
-- App entry point: `final_project/main.py`
-  Starts the Qt application and opens the main window.
-
-## Notes
-
-- `127.0.0.1` means the server and GUI run on the same computer.
-- `recording.pkl` must stay in the project root next to this README.
-- If the GUI says the connection was refused, start `python TCP_Server/main.py`
-  first or check that no other program is using port `12345`.
+The project is intended for educational purposes only.
