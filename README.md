@@ -22,19 +22,58 @@ Team members and responsibilities:
 
 Use Python 3.10 or newer.
 
+### Create and activate the virtual environment
+
+The commands may differ slightly depending on your operating system.
+
+- On macOS/Linux:
+
 ```bash
 cd AP_group_11
-python -m venv .venv
+python -m venv .venv 
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-On Windows, activate the environment with:
+- On Windows, the command can be either `python` or `py` depending on your setup.
+ 
 
 ```powershell
-.venv\Scripts\activate
+cd AP_group_11
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+py -m pip install --upgrade pip
+py -m pip install -r requirements.txt
 ```
+
+If PowerShell blocks the activation script, run this once and then try again:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+### Troubleshooting environment issues
+
+If you see import errors such as `ModuleNotFoundError` or `ImportError` for
+NumPy, Pillow, Matplotlib, VisPy, or other scientific packages, the virtual
+environment may be broken or using incompatible packages. In that case,
+recreate the environment and reinstall the dependencies:
+
+```powershell
+Remove-Item -Recurse -Force .venv
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+py -m pip install --upgrade pip
+py -m pip install -r requirements.txt
+```
+
+Previous errors included missing compiled modules such as `_multiarray_umath`,
+`_imaging`, and `vispy.visuals.text._sdf_cpu`, which were resolved by
+reinstalling the affected packages inside the same virtual environment.
+
+Running the project from the same activated environment usually resolves these
+issues.
 
 ## Run in VS Code
 
@@ -56,8 +95,8 @@ project folder.
 
 Terminal 1 - start the TCP server:
 
-```bash
-python TCP_Server/main.py
+```powershell
+py TCP_Server/main.py
 ```
 
 Leave this terminal open. It should print:
@@ -68,8 +107,17 @@ Server started on 127.0.0.1:12345
 
 Terminal 2 - start the GUI:
 
-```bash
-python final_project/main.py
+```powershell
+py final_project/main.py
+```
+
+If your device uses `python` instead of `py`, replace `py` with `python` in the
+commands above. On Windows, the important part is to run the command from the
+same activated virtual environment and to use the full path if needed, for
+example:
+
+```powershell
+py C:\Users\fatim\Documents\AP_group_11\final_project\main.py
 ```
 
 In the GUI, keep the port set to `12345` and press **Connect**.
@@ -79,6 +127,8 @@ In the GUI, keep the port set to `12345` and press **Connect**.
 - Press **Connect** to start receiving streamed EMG packets.
 - Use the **Channel** dropdown to inspect one channel at a time.
 - Press **Plot All Channels** to show all 32 channels with vertical offsets.
+- If **Plot All Channels** is pressed, the **Channel** button cannot be used
+  until the plot-all option is turned off again.
 - Use **Raw**, **Filtered**, and **RMS** to switch signal modes.
 - Use **Grid** to show/hide plot grid lines.
 - Use **Lock View** to stop auto-fitting and manually pan/zoom the plot.
