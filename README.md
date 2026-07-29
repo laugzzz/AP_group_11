@@ -4,7 +4,7 @@ A PySide6 desktop application for real-time visualisation and offline inspection
 
 **Group:** Ekhlass · Laura · Radhika 
 
-Applied Programming, FAU Erlangen-Nürnberg(Summer Semester 2026)
+Applied Programming, FAU Erlangen-Nürnberg (Summer Semester 2026)
 
 ---
 
@@ -57,7 +57,7 @@ The software follows the **Model-View-ViewModel (MVVM)** architecture, providing
 
 | Member | Primary Role | Contributions |
 |---------|--------------|---------------|
-| **Ekhlass** | Backend | Implemented the backend logic including TCP communication, signal buffering, signal processing, and Model implementation. |
+| **Ekhlass** | Backend | Implemented the backend logic including TCP communication, signal buffering, signal processing |
 | **Laura** | Frontend | Developed the PySide6 graphical interface, VisPy live plotting, offline plotting, and ViewModel integration. |
 | **Radhika** | Repository & Documentation | Managed the GitHub repository, project integration, testing support, and project documentation. |
 
@@ -220,7 +220,8 @@ The RMS mode computes the Root Mean Square over a moving window to produce a smo
 | Window Type | Moving Window |
 | Window Size | 100 ms (200 samples) |
 | Sampling Rate | 2000 Hz |
-```
+
+
 
 Advantages:
 
@@ -298,7 +299,7 @@ Creating a virtual environment is recommended to avoid dependency conflicts.
 ```bash
 python -m venv .venv
 
-.venv\Scripts\activate
+\.venv\Scripts\Activate.ps1
 ```
 
 ### Linux / macOS
@@ -334,21 +335,26 @@ This command installs all dependencies listed in the `requirements.txt` file.
 The application consists of two separate programs:
 
 1. TCP Server
-2. TCP Client (GUI)
+2. GUI Application
 
 **The TCP Server must always be started before launching the client application.**
-
+```
+AP_group_11/
+├── main.py                 ← GUI Application
+├── TCP_Server/
+│   └── main.py             ← TCP Server
+```
 ---
 
 ## Terminal 1 – Start the TCP Server
 
 Open a terminal.
-
-Navigate to the project directory.
+Navigate to the project root directory and start the TCP Server (TCP_Server/main.py):
 
 Run:
 
 ```bash
+cd AP_group_11
 python TCP_Server/main.py
 ```
 
@@ -359,12 +365,12 @@ Keep this terminal running while using the application.
 ## Terminal 2 – Launch the GUI
 
 Open another terminal.
-
-Navigate to the project directory.
+Navigate to the project root directory, and start the GUI application (main.py in the project root):
 
 Run:
 
 ```bash
+cd AP_group_11
 python main.py
 ```
 
@@ -400,29 +406,10 @@ The graphical user interface will open.
 6. Select **Raw**, **RMS**, or **Filtered** to change the signal processing mode.
 7. Switch between the single-channel and multi-channel views as required.
 8. Click **Disconnect** to stop data streaming.
-9. Click **Offline Inspection** to open the recorded signal in a Matplotlib window for offline analysis.
-
+9. Click **Offline Inspection** to open the recorded signal in a Matplotlib window for offline analysis.    
+****Note:**** When ***Plot All Channels*** is enabled, individual channel selection is disabled. To select a specific channel, first turn **Plot All Channels** off.
 ---
 
-# Testing:-
-
-The repository includes test scripts for verifying application behaviour.
-
-### Run Without TCP Server
-
-```bash
-python test_without_tcp.py
-```
-
-### Run With TCP Server
-
-Start the TCP server first, then execute:
-
-```bash
-python test_with_tcp.py
-```
-
----
 
 # Error Handling:-
 
