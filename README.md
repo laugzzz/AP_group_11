@@ -16,6 +16,7 @@ Applied Programming, FAU Erlangen-Nürnberg(Summer Semester 2026)
 - Data Flow
 - Features
 - Signal Processing
+- Prerequisites 
 - Installation
 - Running the Application
 - Using the Application
@@ -210,15 +211,15 @@ This mode is useful when inspecting the original recording.
 
 ## RMS (Root Mean Square)
 
-The RMS mode computes the Root Mean Square over a sliding window, providing a smoother representation of muscle activity.
+The RMS mode computes the Root Mean Square over a moving window to produce a smoother representation of muscle activity.
 
-Formula:
+**RMS Parameters**
 
-```text
-              __________________
-             / Σ(x²)
-RMS = √      ----------
-                 N
+| Parameter | Value |
+|------------|-------|
+| Window Type | Moving Window |
+| Window Size | 100 ms (200 samples) |
+| Sampling Rate | 2000 Hz |
 ```
 
 Advantages:
@@ -234,12 +235,17 @@ Advantages:
 
 The Filtered mode applies a Butterworth Bandpass Filter to remove unwanted frequencies while preserving the useful EMG signal.
 
+**Filter Parameters**
+
 | Parameter | Value |
 |------------|-------|
 | Filter Type | Butterworth Bandpass |
-| Purpose | Remove low and high frequency noise |
+| Filter Order | 4th Order |
+| Low Cutoff Frequency | 20 Hz |
+| High Cutoff Frequency | 450 Hz |
+| Filtering Method | Zero-phase (`filtfilt`) |
 
-Filtering improves the quality of the visualization by reducing unwanted disturbances in the signal.
+Filtering improves the quality of the visualization by reducing low-frequency drift and high-frequency noise while preserving the EMG signal.
 
 ---
 
@@ -247,7 +253,7 @@ Filtering improves the quality of the visualization by reducing unwanted disturb
 
 Before running the project, ensure the following software is installed:
 
-- Python **3.11 or later**
+- Python **3.10 or later**
 - Git
 - pip (included with Python)
 
@@ -384,16 +390,17 @@ The graphical user interface will open.
 
 # Typical Workflow:-
 
+# Using the Application
+
 1. Start the TCP Server.
 2. Launch the GUI application.
-3. Enter the TCP server port.
-4. Click **Connect**.
-5. Observe the live EMG signal.
-6. Select a signal processing mode.
-7. Choose an EMG channel.
-8. Switch between single and multi-channel views.
-9. Click **Disconnect**.
-10. Open **Offline Inspection** to review the recorded data.
+3. Enter the TCP server port number and click **Connect** to begin receiving live EMG data.
+4. The live plot will start updating automatically as data is received.
+5. Use the **Channel** dropdown to switch between the 32 available EMG channels.
+6. Select **Raw**, **RMS**, or **Filtered** to change the signal processing mode.
+7. Switch between the single-channel and multi-channel views as required.
+8. Click **Disconnect** to stop data streaming.
+9. Click **Offline Inspection** to open the recorded signal in a Matplotlib window for offline analysis.
 
 ---
 
