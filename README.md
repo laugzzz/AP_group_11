@@ -4,7 +4,7 @@ A PySide6 desktop application for real-time visualisation and offline inspection
 
 **Group:11** 
 
--***Ekhlass***
+-***Ekhlass Erouiah*** (matrikel no.- 23786741)
 
 -***Laura Uruci*** (matrikel no.- 23839274)
 
