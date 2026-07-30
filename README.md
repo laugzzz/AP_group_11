@@ -2,7 +2,10 @@
 
 A PySide6 desktop application for real-time visualisation and offline inspection of multi-channel EMG signals streamed over TCP.
 
-**Group:** Ekhlass · Laura · Radhika
+**Group:** 
+Ekhlass 
+Laura Uruci (matrikel no.- 23839274)
+Radhika Tawde (matrikel no.- 23831646)
 
 Applied Programming, FAU Erlangen-Nürnberg (Summer Semester 2026)
 
@@ -503,6 +506,11 @@ python final_project/main.py
 ### VisPy shows a black canvas or crashes
 
 VisPy requires an OpenGL-capable display driver. On Windows, ensure your graphics drivers are up to date. Running inside a remote session (e.g. RDP without GPU forwarding) may cause VisPy to fail.
+
+---
+
+### Note for Mac Users
+Clone this project into a local (non-iCloud-synced) directory. If the project or virtual environment is stored in an iCloud-synced folder (e.g., Desktop or Documents), Qt plugins may fail to load due to a known macOS/Qt issue.
 
 ---
 
