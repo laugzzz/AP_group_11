@@ -274,7 +274,7 @@ Verify the installation by running (***Linux/ MacOS***)
 ```bash
 python3 --version
 git --version
-pip --version
+pip3 --version
 ```
 
 ---
