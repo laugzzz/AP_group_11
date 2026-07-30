@@ -2,33 +2,32 @@
 
 A PySide6 desktop application for real-time visualisation and offline inspection of multi-channel EMG signals streamed over TCP.
 
-**Group:** Ekhlass · Laura · Radhika 
+**Group:** Ekhlass · Laura · Radhika
 
 Applied Programming, FAU Erlangen-Nürnberg (Summer Semester 2026)
 
 ---
 
-# Table of Contents:-
+# Table of Contents
 
-- Project Overview
-- Team Responsibilities
-- Architecture (MVVM)
-- Data Flow
-- Features
-- Signal Processing
-- Prerequisites 
-- Installation
-- Running the Application
-- Using the Application
-- Testing
-- Error Handling
-- Project Structure
-- Dependencies
-- License
+- [Project Overview](#project-overview)
+- [Team Responsibilities](#team-responsibilities)
+- [Architecture (MVVM)](#architecture-mvvm)
+- [Data Flow](#data-flow)
+- [Signal Processing](#signal-processing)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [Using the Application](#using-the-application)
+- [Error Handling](#error-handling)
+- [Project Structure](#project-structure)
+- [Dependencies](#dependencies)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
-# Project Overview:-
+# Project Overview
 
 TCP Signal Visualizer is a desktop application developed using **PySide6** to receive, process, and visualize Electromyography (EMG) signals transmitted over a TCP connection in real time.
 
@@ -48,12 +47,11 @@ The software follows the **Model-View-ViewModel (MVVM)** architecture, providing
 - Multi-channel visualization
 - Thread-safe signal buffering
 - Clean MVVM architecture
-- Automated testing
 - Responsive PySide6 graphical interface
 
 ---
 
-# Team Responsibilities:-
+# Team Responsibilities
 
 | Member | Primary Role | Contributions |
 |---------|--------------|---------------|
@@ -63,7 +61,7 @@ The software follows the **Model-View-ViewModel (MVVM)** architecture, providing
 
 ---
 
-# Architecture (MVVM):-
+# Architecture (MVVM)
 
 The project follows the **Model–View–ViewModel (MVVM)** architecture, ensuring that each component has a clearly defined responsibility.
 
@@ -100,7 +98,7 @@ The project follows the **Model–View–ViewModel (MVVM)** architecture, ensuri
 +--------------------------------------------------------------+
 ```
 
-# Responsibilities:-
+## Responsibilities
 
 ### View
 
@@ -135,7 +133,7 @@ This layer performs:
 
 ---
 
-# Data Flow:-
+# Data Flow
 
 The following diagram illustrates how EMG data moves through the application.
 
@@ -182,7 +180,7 @@ Offline Matplotlib Plot
 
 ---
 
-# Signal Processing:-
+# Signal Processing
 
 The application provides three different signal processing modes, allowing users to inspect the EMG data from different perspectives.
 
@@ -250,7 +248,7 @@ Filtering improves the quality of the visualization by reducing low-frequency dr
 
 ---
 
-# Prerequisites:-
+# Prerequisites
 
 Before running the project, ensure the following software is installed:
 
@@ -266,7 +264,9 @@ git --version
 pip --version
 ```
 
-# Installation:-
+---
+
+# Installation
 
 Follow the steps below to install and run the project.
 
@@ -294,27 +294,27 @@ The command above automatically checks out the **final-submission** branch.
 
 Creating a virtual environment is recommended to avoid dependency conflicts.
 
-### Windows
+### Windows (PowerShell)
 
-```bash
+```powershell
 python -m venv .venv
-
-\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 ```
+
+> **Note:** If you get a script execution error, run this first to allow the activation script:
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+> ```
+> Then run `.\.venv\Scripts\Activate.ps1` again.
 
 ### Linux / macOS
 
 ```bash
 python3 -m venv .venv
-
 source .venv/bin/activate
 ```
 
-After activation, your terminal should display:
-
-```text
-(.venv)
-```
+After activation, your terminal prompt will show `(.venv)`.
 
 ---
 
@@ -330,88 +330,80 @@ This command installs all dependencies listed in the `requirements.txt` file.
 
 ---
 
-# Running the Application:-
+# Running the Application
 
-The application consists of two separate programs:
+The application has two parts that must be started in separate terminals:
 
-1. TCP Server
-2. GUI Application
+1. **TCP Server** — streams the EMG data
+2. **GUI Application** — receives and visualises the data
 
-**The TCP Server must always be started before launching the client application.**
+**The TCP Server must be started before the GUI application.**
+
 ```
 AP_group_11/
-├── main.py                 ← GUI Application
 ├── TCP_Server/
-│   └── main.py             ← TCP Server
+│   └── main.py          ← TCP Server
+└── final_project/
+    └── main.py          ← GUI Application
 ```
+
 ---
 
 ## Terminal 1 – Start the TCP Server
-
-Open a terminal.
-Navigate to the project root directory and start the TCP Server (TCP_Server/main.py):
-
-Run:
 
 ```bash
 cd AP_group_11
 python TCP_Server/main.py
 ```
 
-Keep this terminal running while using the application.
+Keep this terminal running. The server listens on port **12345** by default.
 
 ---
 
-## Terminal 2 – Launch the GUI
+## Terminal 2 – Launch the GUI Application
 
-Open another terminal.
-Navigate to the project root directory, and start the GUI application (main.py in the project root):
-
-Run:
+Open a second terminal:
 
 ```bash
 cd AP_group_11
-python main.py
+python final_project/main.py
 ```
 
 The graphical user interface will open.
 
 ---
 
-# Using the Application:-
+# Using the Application
+
+## Typical Workflow
+
+1. Start the TCP Server (`python TCP_Server/main.py`).
+2. Launch the GUI (`python final_project/main.py`).
+3. In the GUI, enter port **12345** (or the port shown in the server terminal) and click **Connect**.
+4. The live plot starts updating automatically as data arrives.
+5. Use the **Channel** dropdown to switch between the 32 available EMG channels.
+6. Select **Raw**, **RMS**, or **Filtered** to change the signal processing mode.
+7. Click **Plot All Channels** to see all 32 channels at once with vertical offsets. While this is active, the channel dropdown is disabled — turn it off to select a specific channel again.
+8. Click **Disconnect** to stop streaming.
+9. Click **Offline Inspection** to open the recorded signal in a Matplotlib window.
+
+---
 
 ## Controls
 
 | Control | Type | Description |
 |----------|------|-------------|
-| Port | Input Field | Enter the TCP server port number |
-| Connect | Button | Starts TCP communication |
+| Port | Input Field | TCP server port number (default: 12345) |
+| Connect | Button | Starts TCP communication and live streaming |
 | Disconnect | Button | Stops data streaming |
-| Signal Mode | Radio Buttons | Raw, RMS and Filtered modes |
-| Channel | Dropdown | Select the desired EMG channel |
-| Plot View | Toggle | Switch between single and multi-channel views |
-| Offline Inspection | Button | Opens the recorded signal in Matplotlib |
+| Signal Mode | Radio Buttons | Switch between Raw, RMS, and Filtered |
+| Channel | Dropdown | Select the EMG channel to display (1–32) |
+| Plot All Channels | Toggle | Show all 32 channels with vertical offsets |
+| Offline Inspection | Button | Opens the full recording in Matplotlib |
 
 ---
 
-# Typical Workflow:-
-
-# Using the Application
-
-1. Start the TCP Server.
-2. Launch the GUI application.
-3. Enter the TCP server port number and click **Connect** to begin receiving live EMG data.
-4. The live plot will start updating automatically as data is received.
-5. Use the **Channel** dropdown to switch between the 32 available EMG channels.
-6. Select **Raw**, **RMS**, or **Filtered** to change the signal processing mode.
-7. Switch between the single-channel and multi-channel views as required.
-8. Click **Disconnect** to stop data streaming.
-9. Click **Offline Inspection** to open the recorded signal in a Matplotlib window for offline analysis.    
-****Note:**** When ***Plot All Channels*** is enabled, individual channel selection is disabled. To select a specific channel, first turn **Plot All Channels** off.
----
-
-
-# Error Handling:-
+# Error Handling
 
 The application handles the following situations without crashing:
 
@@ -426,35 +418,32 @@ The application handles the following situations without crashing:
 
 ---
 
-# Project Structure:-
+# Project Structure
 
 ```text
 AP_group_11/
-│
-├── main.py
-├── Constants.py
-├── requirements.txt
 ├── README.md
+├── requirements.txt
+├── recording.pkl
 │
-├── TCP_Server/
-│   └── main.py
+├── final_project/
+│   ├── main.py                  ← Application entry point
+│   ├── models/
+│   │   └── signal_model.py      ← TCP client, buffer, signal processing
+│   ├── viewmodels/
+│   │   └── mainViewModel.py     ← Application state and logic
+│   └── views/
+│       ├── mainView.py          ← Main window and controls
+│       ├── plotView.py          ← Live VisPy plot widget
+│       └── offlinePlotView.py   ← Offline Matplotlib plot window
 │
-├── models/
-│
-├── viewmodels/
-│
-├── views/
-│
-├── tests/
-│   ├── test_with_tcp.py
-│   └── test_without_tcp.py
-│
-└── assets/
+└── TCP_Server/
+    └── main.py                  ← Provided TCP server (Exercise 5)
 ```
 
 ---
 
-# Dependencies:-
+# Dependencies
 
 | Package | Purpose |
 |----------|---------|
@@ -463,7 +452,6 @@ AP_group_11/
 | Matplotlib | Offline visualization |
 | PySide6 | Desktop graphical user interface |
 | VisPy | High-performance real-time visualization |
-| PyOpenGL | OpenGL backend required by VisPy |
 
 Install all dependencies using:
 
@@ -473,7 +461,55 @@ pip install -r requirements.txt
 
 ---
 
-# License:-
+# Troubleshooting
+
+### Compilation errors when installing requirements.txt (numpy / vispy / pillow)
+
+This is the most common installation problem. Some packages can fail with build or compilation errors on certain systems. Follow these steps in order:
+
+**Step 1 — Upgrade pip, setuptools and wheel before anything else:**
+```bash
+python -m pip install --upgrade pip setuptools wheel
+```
+
+**Step 2 — Install the requirements:**
+```bash
+pip install -r requirements.txt
+```
+
+**Step 3 — If a specific package still fails, install it individually first:**
+```bash
+pip install numpy
+pip install pillow
+pip install vispy
+pip install -r requirements.txt
+```
+---
+
+### Application won't start / import errors
+
+Make sure the venv is activated and `pip install -r requirements.txt` completed without errors. Run from the `AP_group_11/` directory:
+```bash
+python final_project/main.py
+```
+
+---
+
+### Cannot connect to the server
+
+- Make sure the TCP server is running in a separate terminal (`python TCP_Server/main.py`).
+- Use port **12345** (the default). The server prints the port when it starts.
+- Make sure no firewall is blocking localhost connections.
+
+---
+
+### VisPy shows a black canvas or crashes
+
+VisPy requires an OpenGL-capable display driver. On Windows, ensure your graphics drivers are up to date. Running inside a remote session (e.g. RDP without GPU forwarding) may cause VisPy to fail.
+
+---
+
+# License
 
 This project was developed as the final project for the **Applied Programming** course at **Friedrich-Alexander-Universität Erlangen–Nürnberg (FAU)** during the **Summer Semester 2026**.
 
