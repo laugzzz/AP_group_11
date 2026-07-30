@@ -272,12 +272,12 @@ Follow the steps below to install and run the project.
 
 ## Step 1 – Clone the Repository
 
-The final submission is available in the **final-submission** branch.
+The project is available from the repository’s default branch, **main**.
 
 Clone the repository using:
 
 ```bash
-git clone --branch final-submission https://github.com/laugzzz/AP_group_11.git
+git clone https://github.com/laugzzz/AP_group_11.git
 ```
 
 Navigate to the project directory:
@@ -285,9 +285,6 @@ Navigate to the project directory:
 ```bash
 cd AP_group_11
 ```
-
-The command above automatically checks out the **final-submission** branch.
-
 ---
 
 ## Step 2 – Create a Virtual Environment
