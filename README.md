@@ -2,7 +2,7 @@
 
 A PySide6 desktop application for real-time visualisation and offline inspection of multi-channel EMG signals streamed over TCP.
 
-**Group:** 
+**Group:11** 
 
 -***Ekhlass***
 
