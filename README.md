@@ -4,11 +4,11 @@ A PySide6 desktop application for real-time visualisation and offline inspection
 
 **Group:** 
 
--Ekhlass 
+-***Ekhlass***
 
--Laura Uruci (matrikel no.- 23839274)
+-***Laura Uruci*** (matrikel no.- 23839274)
 
--Radhika Tawde (matrikel no.- 23831646)
+-***Radhika Tawde*** (matrikel no.- 23831646)
 
 Applied Programming, FAU Erlangen-Nürnberg (Summer Semester 2026)
 
