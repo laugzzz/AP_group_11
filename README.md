@@ -262,10 +262,17 @@ Before running the project, ensure the following software is installed:
 - Git
 - pip (included with Python)
 
-Verify the installation by running:
+Verify the installation by running (***Windows***)
 
 ```bash
 python --version
+git --version
+pip --version
+```
+
+Verify the installation by running (***Linux/ MacOS***)
+```bash
+python3 --version
 git --version
 pip --version
 ```
@@ -354,9 +361,15 @@ AP_group_11/
 
 ## Terminal 1 – Start the TCP Server
 
+### Windows
 ```bash
 cd AP_group_11
 python TCP_Server/main.py
+```
+### Linux/MacOS
+```bash
+cd AP_group_11
+python3 TCP_Server/main.py
 ```
 
 Keep this terminal running. The server listens on port **12345** by default.
@@ -367,9 +380,15 @@ Keep this terminal running. The server listens on port **12345** by default.
 
 Open a second terminal:
 
+### Windows
 ```bash
 cd AP_group_11
 python final_project/main.py
+```
+### Linux/ MacOS
+```bash
+cd AP_group_11
+python3 final_project/main.py
 ```
 
 The graphical user interface will open.
